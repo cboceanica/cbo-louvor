@@ -494,8 +494,8 @@ button:focus-visible, input:focus-visible {
 }
 
 .church-logo {
-  width: 92px;
-  height: 70px;
+  width: 112px;
+  height: 80px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -515,8 +515,8 @@ button:focus-visible, input:focus-visible {
 
 /* Ajuste de tamanho da logo — aproximadamente a altura do título */
 .church-logo {
-  width: 255px;
-  height: 205px;
+  width: 155px;
+  height: 105px;
 }
 
 @media (max-width: 560px) {
