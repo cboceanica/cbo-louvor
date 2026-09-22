@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escala do Louvor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Cabeçalho: quadro de avisos -->
+  <header class="board-header">
+    <div class="board-header__title">
+      <span class="board-header__eyebrow">Ministério de Louvor</span>
+      <h1>Quadro de Escala</h1>
+    </div>
+
+    <div class="board-header__you">
+      <label for="meuNome">Seu nome</label>
+      <input type="text" id="meuNome" placeholder="Como você se chama?" autocomplete="off">
+      <span class="save-hint" id="saveHint">salvo neste navegador</span>
+    </div>
+  </header>
+
+  <!-- Navegação de mês -->
+  <div class="month-nav">
+    <button id="prevMonth" class="month-nav__btn" aria-label="Mês anterior">&#8592;</button>
+    <div class="month-nav__label">
+      <span id="monthLabel">Agosto</span> <span id="yearLabel" class="month-nav__year">2026</span>
+    </div>
+    <button id="nextMonth" class="month-nav__btn" aria-label="Próximo mês">&#8594;</button>
+    <div class="month-nav__status" id="connStatus">conectando…</div>
+  </div>
+
+  <!-- Legenda -->
+  <div class="legend">
+    <span class="legend__item"><i class="dot dot--empty"></i> vazio</span>
+    <span class="legend__item"><i class="dot dot--partial"></i> parcial</span>
+    <span class="legend__item"><i class="dot dot--full"></i> completo</span>
+    <span class="legend__item legend__item--muted">Toque em um instrumento para marcar ou desmarcar sua vaga</span>
+  </div>
+
+  <!-- Grade do calendário -->
+  <main id="calendarGrid" class="calendar-grid" aria-live="polite"></main>
+
+  <footer class="app-footer">
+    Feito para servir de coração &middot; dados salvos em tempo real
+  </footer>
+</div>
+
+<!-- Modelo de pastilha de instrumento (usado via JS) -->
+<template id="instrumentPillTemplate">
+  <button type="button" class="pill">
+    <span class="pill__icon"></span>
+    <span class="pill__label"></span>
+    <span class="pill__name"></span>
+  </button>
+</template>
+
+<!-- Firebase (compat, sem build step) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
