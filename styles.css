@@ -438,3 +438,49 @@ button:focus-visible, input:focus-visible {
     grid-row: 1 / 4;
   }
 }
+
+
+/* Link clicável do repertório */
+.music-link-wrap {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  align-items: center;
+}
+
+.music-link-wrap input {
+  flex: 1;
+  min-width: 0;
+}
+
+.music-link-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: var(--violet);
+  color: white;
+  text-decoration: none;
+  font: 600 11px var(--font-body);
+  white-space: nowrap;
+  transition: transform .12s ease, opacity .12s ease;
+}
+
+.music-link-btn:hover {
+  transform: translateY(-1px);
+}
+
+.music-link-btn--disabled {
+  opacity: .38;
+  cursor: default;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .music-link-wrap {
+    grid-column: 2 / -1;
+  }
+}

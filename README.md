@@ -10,3 +10,5 @@ Alterações desta versão:
 
 Para publicar no GitHub Pages, substitua index.html, app.js e styles.css pelos arquivos desta pasta.
 Os arquivos firebase-config.js e firebase-config.example.js foram mantidos.
+
+- Links do repertório agora exibem botão **🔗 Abrir**, habilitado quando houver um endereço válido.

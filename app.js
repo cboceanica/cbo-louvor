@@ -259,8 +259,31 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
       input.placeholder = placeholder;
       input.dataset.campo = campo;
       input.setAttribute('aria-label', `${titulo} — música ${i + 1} — ${campo}`);
-      input.addEventListener('input', () => agendarSalvamentoMusica(dia, periodo, i, campo, input.value));
-      linha.appendChild(input);
+      input.addEventListener('input', () => {
+        agendarSalvamentoMusica(dia, periodo, i, campo, input.value);
+
+        if (campo === 'link') {
+          atualizarBotaoLink(linkBtn, input.value);
+        }
+      });
+
+      if (campo === 'link') {
+        const linkWrap = document.createElement('div');
+        linkWrap.className = 'music-link-wrap';
+
+        const linkBtn = document.createElement('a');
+        linkBtn.className = 'music-link-btn';
+        linkBtn.target = '_blank';
+        linkBtn.rel = 'noopener noreferrer';
+        linkBtn.textContent = '🔗 Abrir';
+        atualizarBotaoLink(linkBtn, input.value);
+
+        linkWrap.appendChild(input);
+        linkWrap.appendChild(linkBtn);
+        linha.appendChild(linkWrap);
+      } else {
+        linha.appendChild(input);
+      }
     });
 
     tabela.appendChild(linha);
@@ -268,6 +291,35 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
 
   bloco.appendChild(tabela);
   return bloco;
+}
+
+function normalizarLink(valor) {
+  const link = valor.trim();
+  if (!link) return '';
+
+  try {
+    const url = new URL(link.match(/^https?:\/\//i) ? link : `https://${link}`);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+    return url.href;
+  } catch {
+    return '';
+  }
+}
+
+function atualizarBotaoLink(botao, valor) {
+  const href = normalizarLink(valor);
+
+  if (href) {
+    botao.href = href;
+    botao.classList.remove('music-link-btn--disabled');
+    botao.removeAttribute('aria-disabled');
+    botao.title = 'Abrir música em uma nova aba';
+  } else {
+    botao.removeAttribute('href');
+    botao.classList.add('music-link-btn--disabled');
+    botao.setAttribute('aria-disabled', 'true');
+    botao.title = valor.trim() ? 'Link inválido' : 'Cole um link para habilitar';
+  }
 }
 
 function agendarSalvamentoMusica(dia, periodo, indice, campo, valor) {
