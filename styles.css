@@ -299,3 +299,142 @@ button:focus-visible, input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+
+/* ===============================================================
+   Ajustes: domingos + repertório manhã/noite
+   =============================================================== */
+
+.calendar-grid {
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.day-card {
+  padding: 20px;
+}
+
+.day-card__head > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.day-card__date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(58,63,88,0.55);
+}
+
+.day-card__content {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.75fr) minmax(0, 2.25fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--ink-night);
+}
+
+.repertorio {
+  min-width: 0;
+}
+
+.music-block {
+  border: 1px solid rgba(58,63,88,0.14);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.28);
+}
+
+.music-block + .music-block {
+  margin-top: 14px;
+}
+
+.music-block h4 {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--ink-night);
+  background: var(--violet-soft);
+}
+
+.music-block--noite h4 {
+  background: var(--candle-gold-soft);
+}
+
+.music-table {
+  padding: 8px;
+}
+
+.music-row {
+  display: grid;
+  grid-template-columns: 28px minmax(150px, 2fr) minmax(120px, 1.4fr) 70px minmax(150px, 1.5fr);
+  gap: 7px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.music-row--header {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: rgba(58,63,88,.55);
+  padding: 2px 0 5px;
+}
+
+.music-number {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(58,63,88,.55);
+}
+
+.music-row input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(58,63,88,.18);
+  background: rgba(255,255,255,.72);
+  border-radius: 7px;
+  padding: 7px 8px;
+  font: 12px var(--font-body);
+  color: var(--text-main);
+  outline: none;
+}
+
+.music-row input:focus {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 2px rgba(108,99,166,.10);
+}
+
+@media (max-width: 900px) {
+  .day-card__content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .music-row--header {
+    display: none;
+  }
+
+  .music-row {
+    grid-template-columns: 26px 1fr 1fr;
+    border-bottom: 1px solid rgba(58,63,88,.10);
+    padding: 8px 0;
+  }
+
+  .music-row input[data-campo="nome"],
+  .music-row input[data-campo="link"] {
+    grid-column: 2 / -1;
+  }
+
+  .music-number {
+    grid-row: 1 / 4;
+  }
+}
