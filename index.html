@@ -12,9 +12,12 @@
 <body>
 <div class="app">
   <header class="board-header">
-    <div class="board-header__title">
-      <span class="board-header__eyebrow">Ministério de Louvor</span>
-      <h1>Quadro de Escala</h1>
+    <div class="board-header__brand">
+      <img src="logo-igreja.png" alt="Comunidade Batista Oceânica" class="church-logo">
+      <div class="board-header__title">
+        <span class="board-header__eyebrow">Ministério de Louvor</span>
+        <h1>Quadro de Escala</h1>
+      </div>
     </div>
     <div class="board-header__you">
       <label for="meuNome">Seu nome</label>
@@ -30,13 +33,6 @@
     </div>
     <button id="nextMonth" class="month-nav__btn" aria-label="Próximo mês">&#8594;</button>
     <div class="month-nav__status" id="connStatus">conectando…</div>
-  </div>
-
-  <div class="legend">
-    <span class="legend__item"><i class="dot dot--empty"></i> vazio</span>
-    <span class="legend__item"><i class="dot dot--partial"></i> parcial</span>
-    <span class="legend__item"><i class="dot dot--full"></i> completo</span>
-    <span class="legend__item legend__item--muted">Somente domingos · clique em uma função para marcar sua vaga</span>
   </div>
 
   <main id="calendarGrid" class="calendar-grid" aria-live="polite"></main>
