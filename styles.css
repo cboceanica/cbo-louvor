@@ -641,3 +641,8 @@ button.music-catalog-select {
 .catalog-admin__item .catalog-admin__delete { background:#fbe6e6; color:#8b2020; }
 #catalogAdminStatus { margin-top:10px; font-size:13px; }
 @media (max-width:650px) { .catalog-admin__item { grid-template-columns:1fr 1fr; } .catalog-admin__item input:first-child, .catalog-admin__item input:nth-child(3) { grid-column:1 / -1; } }
+
+/* Área de acesso discreto à administração: maior e fácil de tocar no celular. */
+.board-header__brand.admin-gesture-area { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.board-header__brand.admin-gesture-area .church-logo { cursor: pointer; width: 180px; height: 120px; padding: 4px; box-sizing: border-box; }
+@media (max-width: 560px) { .board-header__brand.admin-gesture-area .church-logo { width: 140px; height: 100px; } }

@@ -636,27 +636,45 @@ function mudarMes(delta) {
 
 ouvirMes(anoAtual, mesAtual);
 
-// Administração discreta: cinco cliques rápidos na logo da igreja.
+// Administração discreta: quatro toques/cliques rápidos na área da logo/título,
+// ou manter pressionado por 2 segundos (mais confiável em telas touch).
 (() => {
   const logo = document.querySelector('.church-logo');
+  const brand = document.querySelector('.board-header__brand');
   const modal = document.getElementById('catalogAdmin');
   const listEl = document.getElementById('catalogAdminList');
   const searchEl = document.getElementById('catalogAdminSearch');
   const statusEl = document.getElementById('catalogAdminStatus');
-  if (!logo || !modal || !listEl) return;
+  if (!logo || !brand || !modal || !listEl) return;
   let clicks = 0;
   let clickTimer = null;
+  let holdTimer = null;
+  let holdTriggered = false;
   let adminEntries = [];
-  logo.style.cursor = 'default';
-  logo.addEventListener('click', () => {
+  brand.classList.add('admin-gesture-area');
+  brand.setAttribute('title', '');
+  brand.setAttribute('aria-label', 'Ministério de Louvor');
+  brand.addEventListener('click', (event) => {
+    if (holdTriggered) { holdTriggered = false; event.preventDefault(); return; }
     clicks += 1;
     clearTimeout(clickTimer);
-    clickTimer = setTimeout(() => { clicks = 0; }, 1400);
-    if (clicks >= 5) {
+    clickTimer = setTimeout(() => { clicks = 0; }, 2200);
+    if (clicks >= 4) {
       clicks = 0;
+      clearTimeout(clickTimer);
       abrirAdminCatalogo();
     }
   });
+  brand.addEventListener('pointerdown', () => {
+    holdTriggered = false;
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => {
+      holdTriggered = true;
+      clicks = 0;
+      abrirAdminCatalogo();
+    }, 2000);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(type => brand.addEventListener(type, () => clearTimeout(holdTimer)));
 
   document.getElementById('catalogAdminClose')?.addEventListener('click', () => { modal.hidden = true; });
   modal.addEventListener('click', event => { if (event.target === modal) modal.hidden = true; });
