@@ -645,6 +645,7 @@ ouvirMes(anoAtual, mesAtual);
   const listEl = document.getElementById('catalogAdminList');
   const searchEl = document.getElementById('catalogAdminSearch');
   const statusEl = document.getElementById('catalogAdminStatus');
+  const addButton = document.getElementById('catalogAdminAdd');
   if (!logo || !brand || !modal || !listEl) return;
   let clicks = 0;
   let clickTimer = null;
@@ -679,6 +680,15 @@ ouvirMes(anoAtual, mesAtual);
   document.getElementById('catalogAdminClose')?.addEventListener('click', () => { modal.hidden = true; });
   modal.addEventListener('click', event => { if (event.target === modal) modal.hidden = true; });
   searchEl?.addEventListener('input', renderAdminEntries);
+  addButton?.addEventListener('click', () => {
+    const nova = { id: '', nome: '', cantor: '', link: '', _origem: 'novo' };
+    adminEntries.unshift(nova);
+    if (searchEl) searchEl.value = '';
+    renderAdminEntries();
+    statusEl.textContent = 'Preencha nome, cantor e link (opcional) e clique em Salvar.';
+    const primeiroCampo = listEl.querySelector('.catalog-admin__item input');
+    primeiroCampo?.focus();
+  });
 
   async function abrirAdminCatalogo() {
     if (!firebaseOk) { alert('O Firebase não está conectado.'); return; }
@@ -771,7 +781,7 @@ ouvirMes(anoAtual, mesAtual);
           // Se o nome foi alterado, remove o documento antigo do catálogo ou marca a grafia antiga
           // como oculta quando ela só existia nas escalas históricas (que não são alteradas).
           await db.collection('catalogoMusicas').doc(novoId).set(registro, { merge: true });
-          const idAntigo = entry._origem === 'catalogo' ? entry.id : chaveCatalogo(entry.nome);
+          const idAntigo = entry._origem === 'catalogo' ? entry.id : (entry._origem === 'escala' ? chaveCatalogo(entry.nome) : '');
           if (idAntigo && idAntigo !== novoId) {
             if (entry._origem === 'catalogo') {
               await db.collection('catalogoMusicas').doc(idAntigo).delete();
