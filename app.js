@@ -689,18 +689,27 @@ ouvirMes(anoAtual, mesAtual);
       // Carrega primeiro a coleção principal e depois complementa com músicas
       // que existem apenas nas escalas mensais antigas.
       const mapa = new Map();
-      const snap = await db.collection('catalogoMusicas').get();
-      snap.docs.forEach(doc => {
-        const dados = doc.data() || {};
-        const chave = chaveCatalogo(dados.nome || '');
-        if (chave) mapa.set(chave, { id: doc.id, ...dados, _origem: 'catalogo' });
-      });
+      // A falta de permissão na coleção do catálogo não deve impedir a
+      // recuperação das músicas que já existem nas escalas mensais.
+      let erroColecaoCatalogo = null;
+      try {
+        const snap = await db.collection('catalogoMusicas').get();
+        snap.docs.forEach(doc => {
+          const dados = doc.data() || {};
+          const chave = chaveCatalogo(dados.nome || '');
+          if (chave) mapa.set(chave, { id: doc.id, ...dados, _origem: 'catalogo' });
+        });
+      } catch (err) {
+        erroColecaoCatalogo = err;
+        console.warn('Não foi possível ler catalogoMusicas; tentando usar as escalas mensais:', err);
+      }
       const ano = new Date().getFullYear();
       const meses = [];
       for (const a of [ano - 1, ano, ano + 1]) {
         for (let m = 1; m <= 12; m++) meses.push(`${a}-${String(m).padStart(2, '0')}`);
       }
       const escalas = await Promise.allSettled(meses.map(id => db.collection('escalas').doc(id).get()));
+      const leiturasEscalaComErro = escalas.filter(resultado => resultado.status === 'rejected').length;
       escalas.forEach(resultado => {
         if (resultado.status !== 'fulfilled' || !resultado.value.exists) return;
         const dias = resultado.value.data()?.dias || {};
@@ -721,11 +730,19 @@ ouvirMes(anoAtual, mesAtual);
         });
       });
       adminEntries = [...mapa.values()].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
-      statusEl.textContent = adminEntries.length ? `${adminEntries.length} músicas encontradas (catálogo e escalas salvas).` : 'Nenhuma música encontrada. Confira as permissões de leitura do Firestore.';
+      if (adminEntries.length) {
+        statusEl.textContent = `${adminEntries.length} músicas encontradas (catálogo e escalas salvas).`;
+        if (erroColecaoCatalogo) statusEl.textContent += ' Aviso: a coleção do catálogo não pôde ser lida; exibindo músicas recuperadas das escalas.';
+        if (leiturasEscalaComErro) statusEl.textContent += ` Algumas escalas não puderam ser lidas (${leiturasEscalaComErro}).`;
+      } else if (erroColecaoCatalogo && leiturasEscalaComErro === escalas.length) {
+        statusEl.textContent = 'O Firestore bloqueou a leitura do catálogo e das escalas. É necessário revisar as regras de leitura das coleções catalogoMusicas e escalas.';
+      } else {
+        statusEl.textContent = 'Nenhuma música encontrada nas coleções acessíveis do Firestore.';
+      }
       renderAdminEntries();
     } catch (err) {
       console.error('Erro ao abrir administração do catálogo:', err);
-      statusEl.textContent = 'Não foi possível ler o catálogo. Verifique as regras do Firestore.';
+      statusEl.textContent = `Falha ao carregar músicas (${err.code || err.message || 'erro desconhecido'}). Consulte o console do navegador e as regras do Firestore.`;
     }
   }
 
