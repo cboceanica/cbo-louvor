@@ -680,14 +680,28 @@ ouvirMes(anoAtual, mesAtual);
   document.getElementById('catalogAdminClose')?.addEventListener('click', () => { modal.hidden = true; });
   modal.addEventListener('click', event => { if (event.target === modal) modal.hidden = true; });
   searchEl?.addEventListener('input', renderAdminEntries);
-  addButton?.addEventListener('click', () => {
+  function iniciarNovaMusica(event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (modal.hidden) modal.hidden = false;
     const nova = { id: '', nome: '', cantor: '', link: '', _origem: 'novo' };
+    adminEntries = adminEntries.filter(item => item._origem !== 'novo');
     adminEntries.unshift(nova);
     if (searchEl) searchEl.value = '';
     renderAdminEntries();
-    statusEl.textContent = 'Preencha nome, cantor e link (opcional) e clique em Salvar.';
+    statusEl.textContent = 'Nova música: preencha o nome, cantor/banda e link (opcional), depois clique em Salvar.';
+    listEl.scrollTop = 0;
     const primeiroCampo = listEl.querySelector('.catalog-admin__item input');
-    primeiroCampo?.focus();
+    if (primeiroCampo) {
+      primeiroCampo.focus();
+      primeiroCampo.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+  // Use both the direct listener and delegation so the action remains reliable
+  // if the admin controls are reconstructed by the page.
+  if (addButton) addButton.onclick = iniciarNovaMusica;
+  modal.addEventListener('click', event => {
+    if (event.target.closest && event.target.closest('#catalogAdminAdd')) iniciarNovaMusica(event);
   });
 
   async function abrirAdminCatalogo() {
