@@ -1,7 +1,7 @@
 {
   "id": "./",
   "name": "Escala do Louvor CBO",
-  "short_name": "Escala CBO",
+  "short_name": "Louvor CBO",
   "description": "Sistema de escala do Ministério de Louvor da Comunidade Batista Oceânica.",
   "lang": "pt-BR",
   "start_url": "./",
