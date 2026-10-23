@@ -16,7 +16,7 @@
 <style>
 :root{color-scheme:light;--green:#123b36;--green2:#1d6256;--cream:#f5efe3;--ink:#1f302d}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#e3eee7 0,#f5efe3 58%,#eee5d5 100%);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;justify-content:center;align-items:center;padding:24px}
-.wrap{width:min(100%,760px);text-align:center}.logo{width:94px;height:94px;object-fit:contain;margin:0 auto 18px}.eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--green2)}h1{font-size:clamp(2rem,6vw,3.3rem);line-height:1.05;color:var(--green);margin:10px 0 12px;letter-spacing:-.05em}.intro{font-size:1rem;line-height:1.6;color:#53635e;margin:0 auto 30px;max-width:490px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.ministry{display:flex;min-height:126px;flex-direction:column;align-items:flex-start;justify-content:space-between;text-decoration:none;text-align:left;background:rgba(255,255,255,.78);border:1px solid #d9e1d9;border-radius:20px;padding:22px;color:var(--green);box-shadow:0 8px 24px #173e3010;transition:transform .18s,box-shadow .18s}.ministry:hover{transform:translateY(-3px);box-shadow:0 14px 28px #173e3020}.emoji{font-size:1.8rem;margin-bottom:14px}.name{font-size:1.08rem;font-weight:800}.go{font-size:.84rem;color:var(--green2);margin-top:7px}.foot{margin-top:28px;font-size:.78rem;color:#75827c}@media(max-width:430px){body{padding:18px}.grid{gap:10px}.ministry{padding:17px;min-height:116px;border-radius:16px}.name{font-size:1rem}.intro{font-size:.94rem}}
+.wrap{width:min(100%,760px);text-align:center}.logo{width:94px;height:94px;object-fit:contain;margin:0 auto 18px}.eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--green2)}h1{font-size:clamp(2rem,6vw,3.3rem);line-height:1.05;color:var(--green);margin:10px 0 12px;letter-spacing:-.05em}.intro{font-size:1rem;line-height:1.6;color:#53635e;margin:0 auto 30px;max-width:490px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.ministry{display:flex;min-height:126px;flex-direction:column;align-items:flex-start;justify-content:space-between;text-decoration:none;text-align:left;background:rgba(255,255,255,.78);border:1px solid #d9e1d9;border-radius:20px;padding:22px;color:var(--green);box-shadow:0 8px 24px #173e3010;transition:transform .18s,box-shadow .18s}.ministry:hover{transform:translateY(-3px);box-shadow:0 14px 28px #173e3020}.emoji{font-size:1.8rem;margin-bottom:14px}.name{font-size:1.08rem;font-weight:800}.go{font-size:.84rem;color:var(--green2);margin-top:7px}.install-app-wrap{margin:0 auto 22px;display:flex;flex-direction:column;align-items:center;gap:8px}.install-app-btn{border:0;border-radius:999px;padding:12px 20px;background:var(--green);color:#fff;font:700 .95rem Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 16px #173e3020}.install-app-btn:disabled{opacity:.8;cursor:default}.install-app-help{max-width:460px;margin:0;color:#53635e;font-size:.86rem;line-height:1.5}.foot{margin-top:28px;font-size:.78rem;color:#75827c}@media(max-width:430px){body{padding:18px}.grid{gap:10px}.ministry{padding:17px;min-height:116px;border-radius:16px}.name{font-size:1rem}.intro{font-size:.94rem}}
 </style>
 </head>
 <body>
@@ -25,6 +25,10 @@
 <div class="eyebrow">Comunidade Batista Oceânica</div>
 <h1>Ministérios CBO</h1>
 <p class="intro">Escolha o ministério para acessar sua página.</p>
+<div class="install-app-wrap">
+<button type="button" id="installAppBtn" class="install-app-btn">⬇️ Baixe aqui o app</button>
+<p id="installAppHelp" class="install-app-help" hidden></p>
+</div>
 <nav class="grid" aria-label="Escolha um ministério">
 <a class="ministry" href="./louvor.html"><span><span class="emoji">🎶</span><br><span class="name">Louvor</span></span><span class="go">Acessar ministério →</span></a>
 <a class="ministry" href="./sonoplastia.html"><span><span class="emoji">🎚️</span><br><span class="name">Sonoplastia</span></span><span class="go">Acessar ministério →</span></a>
@@ -35,6 +39,20 @@
 </main>
 <script>
 if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('PWA',e)));
+</script>
+
+<script>
+(()=>{
+ const button=document.getElementById('installAppBtn');const help=document.getElementById('installAppHelp');let installPrompt=null;
+ const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const isSafari=isIOS&&/safari/i.test(navigator.userAgent)&&!/crios|fxios|edgios/i.test(navigator.userAgent);
+ const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+ const showHelp=message=>{help.textContent=message;help.hidden=false};
+ if(isStandalone){button.textContent='✓ App instalado';button.disabled=true}
+ window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;button.textContent='⬇️ Baixe aqui o app'});
+ window.addEventListener('appinstalled',()=>{installPrompt=null;button.textContent='✓ App instalado';button.disabled=true;showHelp('Pronto! O app foi instalado no seu celular.')});
+ button.addEventListener('click',async()=>{if(isStandalone)return;if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;return}if(isIOS){showHelp(isSafari?'Para instalar: toque em Compartilhar (quadrado com seta para cima) e escolha “Adicionar à Tela de Início”. Depois toque em “Adicionar”.':'Para instalar no iPhone, abra este site no Safari. Depois toque em Compartilhar e escolha “Adicionar à Tela de Início”.');return}showHelp('Se a opção de instalação não aparecer automaticamente, abra o menu ⋮ do Chrome e escolha “Instalar app” ou “Adicionar à tela inicial”.')});
+})();
 </script>
 </body>
 </html>
