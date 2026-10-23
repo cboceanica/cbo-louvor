@@ -347,7 +347,9 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
       placeholder.value = '';
       placeholder.textContent = 'Escolher do catálogo…';
       catalogo.appendChild(placeholder);
-      catalogo.addEventListener('focus', carregarCatalogo);
+      catalogo.addEventListener('focus', () => carregarCatalogo(catalogo));
+      catalogo.addEventListener('pointerdown', () => carregarCatalogo(catalogo));
+      catalogo.addEventListener('click', () => carregarCatalogo(catalogo));
       catalogo.addEventListener('change', () => {
         const escolhida = catalogo.value;
         if (!escolhida) return;
@@ -447,32 +449,94 @@ async function salvarRepertorioBloco(dia, periodo, quantidade, rascunho, botao) 
 
 let catalogoMusicasCache = null;
 let carregandoCatalogo = null;
-async function carregarCatalogo() {
-  if (!firebaseOk || !this) return;
-  const selects = document.querySelectorAll('.music-catalog-select');
+function mesclarMusicaCatalogo(lista, musica) {
+  const nome = String(musica?.nome || '').trim();
+  if (!nome) return;
+  const chave = chaveCatalogo(nome);
+  const existente = lista.findIndex(m => chaveCatalogo(m.nome) === chave);
+  const registro = {
+    nome,
+    cantor: String(musica.cantor || '').trim(),
+    link: String(musica.link || '').trim()
+  };
+  if (existente >= 0) {
+    // Preserve informações já existentes, mas complete campos vazios com dados da escala.
+    lista[existente] = {
+      ...lista[existente],
+      cantor: lista[existente].cantor || registro.cantor,
+      link: lista[existente].link || registro.link
+    };
+  } else lista.push(registro);
+}
+
+async function carregarCatalogo(selectAlvo) {
+  if (!firebaseOk) {
+    alert('O catálogo precisa de conexão com o Firebase.');
+    return;
+  }
+  const select = selectAlvo || document.activeElement;
+  if (!select || !select.classList?.contains('music-catalog-select')) return;
+
   if (!catalogoMusicasCache) {
     if (!carregandoCatalogo) {
-      carregandoCatalogo = db.collection('catalogoMusicas').get().then(snapshot => {
-        catalogoMusicasCache = snapshot.docs.map(doc => doc.data())
-          .filter(m => m.nome)
-          .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
-      }).catch(err => { console.warn('Não foi possível carregar catálogo:', err); catalogoMusicasCache = []; })
+      carregandoCatalogo = (async () => {
+        const lista = [];
+        // Primeiro tenta a coleção própria do catálogo.
+        try {
+          const snapshot = await db.collection('catalogoMusicas').get();
+          snapshot.forEach(doc => mesclarMusicaCatalogo(lista, doc.data()));
+        } catch (err) {
+          console.warn('Leitura de catalogoMusicas indisponível; tentando recuperar pelas escalas salvas.', err);
+        }
+        // Fallback: reconstrói o catálogo usando repertórios já salvos nos documentos mensais.
+        // Isso permite aproveitar músicas antigas mesmo se a coleção catalogoMusicas estiver vazia.
+        const ano = new Date().getFullYear();
+        const meses = [];
+        for (const a of [ano - 1, ano, ano + 1]) {
+          for (let m = 1; m <= 12; m++) meses.push(`${a}-${String(m).padStart(2, '0')}`);
+        }
+        const resultados = await Promise.allSettled(
+          meses.map(id => db.collection('escalas').doc(id).get())
+        );
+        resultados.forEach(resultado => {
+          if (resultado.status !== 'fulfilled' || !resultado.value.exists) return;
+          const dias = resultado.value.data()?.dias || {};
+          Object.values(dias).forEach(dia => {
+            const repertorios = dia?.musicas || {};
+            ['manha', 'noite'].forEach(periodo => {
+              (repertorios[periodo] || []).forEach(musica => mesclarMusicaCatalogo(lista, musica));
+            });
+          });
+        });
+        lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+        return lista;
+      })().then(lista => { catalogoMusicasCache = lista; return lista; })
+        .catch(err => { console.error('Erro ao carregar catálogo:', err); throw err; })
         .finally(() => { carregandoCatalogo = null; });
     }
-    await carregandoCatalogo;
+    try {
+      await carregandoCatalogo;
+    } catch (err) {
+      alert('Não foi possível carregar o catálogo. Verifique as permissões de leitura do Firestore e tente novamente.');
+      return;
+    }
   }
-  document.querySelectorAll('.music-catalog-select').forEach(select => {
-    const atual = select.value;
-    const jaTem = select.options.length > 1;
-    if (jaTem) return;
-    (catalogoMusicasCache || []).forEach(m => {
-      const option = document.createElement('option');
-      option.value = JSON.stringify({ nome: m.nome || '', cantor: m.cantor || '', link: m.link || '' });
-      option.textContent = `${m.nome}${m.cantor ? ' — ' + m.cantor : ''}`;
-      select.appendChild(option);
-    });
-    select.value = atual;
+
+  // Popula o seletor que foi acionado, sem depender de foco assíncrono de todos os campos.
+  if (select.options.length > 1) return;
+  (catalogoMusicasCache || []).forEach(m => {
+    const option = document.createElement('option');
+    option.value = JSON.stringify({ nome: m.nome || '', cantor: m.cantor || '', link: m.link || '' });
+    option.textContent = `${m.nome}${m.cantor ? ' — ' + m.cantor : ''}`;
+    select.appendChild(option);
   });
+  if (!catalogoMusicasCache?.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Nenhuma música salva ainda';
+    option.disabled = true;
+    select.appendChild(option);
+  }
 }
 
 function chaveCatalogo(nome) {
@@ -483,12 +547,13 @@ async function salvarNoCatalogo(musica) {
   if (!firebaseOk || !musica.nome || !musica.nome.trim()) return;
   const nome = musica.nome.trim();
   const registro = { nome, cantor: (musica.cantor || '').trim(), link: (musica.link || '').trim(), atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() };
+  if (catalogoMusicasCache) mesclarMusicaCatalogo(catalogoMusicasCache, registro);
   const id = chaveCatalogo(nome);
   if (!id) return;
   try {
     await db.collection('catalogoMusicas').doc(id).set(registro, { merge: true });
-    catalogoMusicasCache = null;
-  } catch (e) { console.warn('Não foi possível atualizar o catálogo de músicas:', e); }
+    if (catalogoMusicasCache) mesclarMusicaCatalogo(catalogoMusicasCache, registro);
+  } catch (e) { console.warn('Não foi possível atualizar a coleção catalogoMusicas; as músicas salvas nas escalas ainda poderão aparecer no catálogo:', e); }
 }
 
 async function copiarRepertorioManhaParaNoite(dia) {
