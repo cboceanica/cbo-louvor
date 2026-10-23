@@ -11,10 +11,47 @@ const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','A
 const weekdays = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
 let year = new Date().getFullYear(), month = new Date().getMonth(), data = {}, unsubscribe = null, db = null;
 const calendar = document.getElementById('calendar'), label = document.getElementById('monthLabel'), status = document.getElementById('status');
+let memberNames = [...cfg.names], unsubscribeMembers = null;
+const memberPanel = document.getElementById('membersPanel'), memberList = document.getElementById('memberList'), memberInput = document.getElementById('newMemberName'), memberStatus = document.getElementById('memberStatus');
 try {
  if (window.firebaseConfig?.apiKey && window.firebase) { if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig); db = firebase.firestore(); }
 } catch (e) { console.error(e); }
 function docId(){ return ministry + '-' + year + '-' + String(month+1).padStart(2,'0'); }
+function listenMembers(){
+ if (!db) { memberStatus.textContent = 'Banco de dados indisponível.'; return; }
+ unsubscribeMembers = db.collection('escalas').doc(ministry + '-members').onSnapshot(snap => {
+   const saved = snap.exists && Array.isArray(snap.data().names) ? snap.data().names : null;
+   memberNames = saved && saved.length ? saved : [...cfg.names];
+   renderMembers(); render();
+ }, err => { console.error(err); memberStatus.textContent = 'Não foi possível carregar os membros.'; });
+}
+function renderMembers(){
+ memberList.innerHTML = '';
+ memberNames.forEach(name => {
+   const row = document.createElement('div'); row.className='member-row';
+   const label = document.createElement('span'); label.textContent=name; label.className='member-name';
+   const remove = document.createElement('button'); remove.type='button'; remove.className='remove-member'; remove.textContent='Excluir';
+   remove.addEventListener('click', async()=>{
+     if(!confirm('Excluir '+name+' da lista de membros? As escalas antigas serão preservadas.')) return;
+     const updated = memberNames.filter(n=>n!==name);
+     try { await db.collection('escalas').doc(ministry + '-members').set({names:updated,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+       memberStatus.textContent = name + ' foi removido da lista.'; }
+     catch(e){console.error(e);memberStatus.textContent='Não foi possível excluir. Verifique as permissões do banco.';}
+   });
+   row.append(label,remove); memberList.append(row);
+ });
+ if (!memberNames.length) { const empty=document.createElement('p'); empty.textContent='Nenhum membro cadastrado.'; memberList.append(empty); }
+}
+document.getElementById('addMember').addEventListener('click', async()=>{
+ const name=memberInput.value.trim();
+ if(!name){memberStatus.textContent='Digite o nome do novo membro.';memberInput.focus();return;}
+ if(memberNames.some(n=>n.toLocaleLowerCase('pt-BR')===name.toLocaleLowerCase('pt-BR'))){memberStatus.textContent='Esse nome já está cadastrado.';return;}
+ try {
+   const updated=[...memberNames,name].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+   await db.collection('escalas').doc(ministry + '-members').set({names:updated,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+   memberInput.value='';memberStatus.textContent=name+' foi cadastrado.';
+ } catch(e){console.error(e);memberStatus.textContent='Não foi possível salvar. Verifique as permissões do banco.';}
+});
 function loadMonth(){
  if (unsubscribe) unsubscribe();
  data = {};
@@ -45,7 +82,8 @@ function render(){
    const lab = document.createElement('label'); lab.className='selectlabel'; lab.textContent='Responsável'; lab.htmlFor='person-'+key;
    const select = document.createElement('select'); select.className='person'; select.id='person-'+key;
    const blank = document.createElement('option'); blank.value=''; blank.textContent='— Selecione um nome —'; select.append(blank);
-   cfg.names.forEach(name => { const opt=document.createElement('option'); opt.value=name; opt.textContent=name; select.append(opt); });
+   memberNames.forEach(name => { const opt=document.createElement('option'); opt.value=name; opt.textContent=name; select.append(opt); });
+   if (assigned && !memberNames.includes(assigned)) { const opt=document.createElement('option'); opt.value=assigned; opt.textContent=assigned+' (fora da lista atual)'; select.append(opt); }
    select.value=assigned;
    const save = document.createElement('button'); save.className='save'; save.type='button'; save.textContent='Salvar';
    const saved = document.createElement('div'); saved.className='saved'; saved.setAttribute('aria-live','polite'); saved.textContent=assigned ? 'Salvo: '+assigned : 'Ainda não salvo';
@@ -66,5 +104,6 @@ function render(){
 }
 document.getElementById('prev').addEventListener('click',()=>{if(month===0){month=11;year--;}else month--;loadMonth();});
 document.getElementById('next').addEventListener('click',()=>{if(month===11){month=0;year++;}else month++;loadMonth();});
+listenMembers();
 loadMonth();
 })();
