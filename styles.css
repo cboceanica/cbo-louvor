@@ -525,3 +525,52 @@ button:focus-visible, input:focus-visible {
     height: 86px;
   }
 }
+
+/* Repertório compacto e catálogo de músicas */
+.music-block__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: var(--violet-soft);
+}
+
+.music-block--noite .music-block__top { background: var(--candle-gold-soft); }
+.music-block__top h4 { padding: 0; background: transparent; }
+.music-block__controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.music-block__controls label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+.music-block__controls select,
+.music-catalog-select {
+  max-width: 100%;
+  border: 1px solid rgba(58,63,88,.2);
+  border-radius: 7px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,.85);
+  color: var(--text-main);
+  font: 12px var(--font-body);
+}
+.copy-morning-btn {
+  border: 0;
+  border-radius: 7px;
+  padding: 7px 10px;
+  background: var(--violet);
+  color: white;
+  cursor: pointer;
+  font: 600 11px var(--font-body);
+}
+.copy-morning-btn:hover { filter: brightness(1.08); }
+.music-details { border-top: 1px solid rgba(58,63,88,.12); }
+.music-details > summary { cursor: pointer; padding: 9px 12px; color: var(--ink-night); font-size: 12px; font-weight: 600; }
+.music-name-wrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.music-name-wrap input { width: 100%; min-width: 0; }
+.music-catalog-select { width: 100%; }
+
+@media (max-width: 700px) {
+  .music-name-wrap { grid-column: 2 / -1; }
+  .music-name-wrap input[data-campo="nome"] { grid-column: auto; }
+  .music-block__top { align-items: flex-start; }
+  .music-block__controls { width: 100%; }
+  .copy-morning-btn { white-space: normal; }
+}
