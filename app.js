@@ -590,9 +590,20 @@ async function copiarRepertorioManhaParaNoite(dia) {
   if (!confirm('Copiar as músicas da manhã para a noite? Isso substituirá o repertório atual da noite.')) return;
   const ref = db.collection('escalas').doc(idDoMes(anoAtual, mesAtual));
   try {
-    await ref.set({ dias: { [String(dia)]: { musicas: { noite: manha } } } }, { merge: true });
-    for (const musica of manha) if (musica.nome) await salvarNoCatalogo(musica);
-  } catch (e) { console.error(e); alert('Não foi possível copiar o repertório.'); }
+    // Atualiza exclusivamente o campo do repertório da noite. Usar o caminho
+    // completo evita substituir o mapa "musicas" e preserva o repertório da manhã.
+    const copiaIndependente = manha.map(m => ({
+      nome: String(m.nome || ''),
+      cantor: String(m.cantor || ''),
+      tom: String(m.tom || ''),
+      link: String(m.link || '')
+    }));
+    await ref.update({ [`dias.${String(dia)}.musicas.noite`]: copiaIndependente });
+    for (const musica of copiaIndependente) if (musica.nome) await salvarNoCatalogo(musica);
+  } catch (e) {
+    console.error(e);
+    alert('Não foi possível copiar o repertório. O repertório da manhã foi mantido.');
+  }
 }
 
 function normalizarLink(valor) {
