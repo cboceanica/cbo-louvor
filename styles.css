@@ -648,3 +648,11 @@ button.music-catalog-select {
 .board-header__brand.admin-gesture-area { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .board-header__brand.admin-gesture-area .church-logo { cursor: pointer; width: 180px; height: 120px; padding: 4px; box-sizing: border-box; }
 @media (max-width: 560px) { .board-header__brand.admin-gesture-area .church-logo { width: 140px; height: 100px; } }
+
+
+/* Botão simples para instalar o app */
+.install-app-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; margin: 0 auto 18px; padding: 0 16px; }
+.install-app-btn { border:0; border-radius:999px; padding:12px 22px; background:#28764b; color:#fff; font:700 15px/1.2 Inter, sans-serif; box-shadow:0 4px 12px rgba(0,0,0,.16); cursor:pointer; }
+.install-app-btn:hover { filter:brightness(1.08); }
+.install-app-btn:disabled { opacity:.85; cursor:default; }
+.install-app-help { max-width:620px; margin:0; padding:10px 14px; border-radius:12px; background:#eaf4ed; color:#17452b; font:500 13px/1.5 Inter,sans-serif; text-align:center; }

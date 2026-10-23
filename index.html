@@ -32,6 +32,11 @@
     </div>
   </header>
 
+  <div class="install-app-wrap">
+    <button type="button" id="installAppBtn" class="install-app-btn">⬇️ Baixe aqui o app</button>
+    <p id="installAppHelp" class="install-app-help" hidden></p>
+  </div>
+
   <div class="month-nav">
     <button id="prevMonth" class="month-nav__btn" aria-label="Mês anterior">&#8592;</button>
     <div class="month-nav__label">
@@ -76,6 +81,49 @@
       navigator.serviceWorker.register('./sw.js').catch(error => console.warn('PWA: não foi possível registrar o service worker', error));
     });
   }
+</script>
+<script>
+(() => {
+  const button = document.getElementById('installAppBtn');
+  const help = document.getElementById('installAppHelp');
+  let installPrompt = null;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isSafari = isIOS && /safari/i.test(navigator.userAgent) && !/crios|fxios|edgios/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const showHelp = (message) => { help.textContent = message; help.hidden = false; };
+
+  if (isStandalone) {
+    button.textContent = '✓ App instalado';
+    button.disabled = true;
+  }
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    button.textContent = '⬇️ Baixe aqui o app';
+  });
+  window.addEventListener('appinstalled', () => {
+    installPrompt = null;
+    button.textContent = '✓ App instalado';
+    button.disabled = true;
+    showHelp('Pronto! O app foi instalado no seu celular.');
+  });
+  button.addEventListener('click', async () => {
+    if (isStandalone) return;
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      installPrompt = null;
+      return;
+    }
+    if (isIOS) {
+      showHelp(isSafari
+        ? 'Para instalar: toque em Compartilhar (quadrado com seta para cima) e escolha “Adicionar à Tela de Início”. Depois toque em “Adicionar”.'
+        : 'Para instalar no iPhone, abra este site no Safari. Depois toque em Compartilhar e escolha “Adicionar à Tela de Início”.');
+      return;
+    }
+    showHelp('Se a opção de instalação não aparecer automaticamente, abra o menu ⋮ do Chrome e escolha “Instalar app” ou “Adicionar à tela inicial”.');
+  });
+})();
 </script>
 </body>
 </html>
