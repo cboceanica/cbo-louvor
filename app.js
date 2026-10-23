@@ -520,7 +520,7 @@ async function carregarCatalogo() {
       const lista = [];
       try {
         const snapshot = await db.collection('catalogoMusicas').get();
-        snapshot.forEach(doc => mesclarMusicaCatalogo(lista, doc.data()));
+        snapshot.forEach(doc => { const dados = doc.data() || {}; if (!dados.oculto) mesclarMusicaCatalogo(lista, dados); });
       } catch (err) {
         console.warn('Leitura de catalogoMusicas indisponível; tentando recuperar pelas escalas salvas.', err);
       }
@@ -558,7 +558,7 @@ function chaveCatalogo(nome) {
 async function salvarNoCatalogo(musica) {
   if (!firebaseOk || !musica.nome || !musica.nome.trim()) return;
   const nome = musica.nome.trim();
-  const registro = { nome, cantor: (musica.cantor || '').trim(), link: (musica.link || '').trim(), atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() };
+  const registro = { nome, cantor: (musica.cantor || '').trim(), link: (musica.link || '').trim(), oculto: false, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() };
   if (catalogoMusicasCache) mesclarMusicaCatalogo(catalogoMusicasCache, registro);
   const id = chaveCatalogo(nome);
   if (!id) return;
@@ -697,7 +697,7 @@ ouvirMes(anoAtual, mesAtual);
         snap.docs.forEach(doc => {
           const dados = doc.data() || {};
           const chave = chaveCatalogo(dados.nome || '');
-          if (chave) mapa.set(chave, { id: doc.id, ...dados, _origem: 'catalogo' });
+          if (chave && dados.oculto !== true) mapa.set(chave, { id: doc.id, ...dados, _origem: 'catalogo' });
         });
       } catch (err) {
         erroColecaoCatalogo = err;
@@ -708,6 +708,8 @@ ouvirMes(anoAtual, mesAtual);
       for (const a of [ano - 1, ano, ano + 1]) {
         for (let m = 1; m <= 12; m++) meses.push(`${a}-${String(m).padStart(2, '0')}`);
       }
+      const chavesOcultas = new Set();
+      try { const ocultos = await db.collection('catalogoMusicas').where('oculto', '==', true).get(); ocultos.forEach(doc => { const k = chaveCatalogo(doc.data()?.nome || ''); if (k) chavesOcultas.add(k); }); } catch (e) { console.warn('Não foi possível ler marcações de músicas ocultas', e); }
       const escalas = await Promise.allSettled(meses.map(id => db.collection('escalas').doc(id).get()));
       const leiturasEscalaComErro = escalas.filter(resultado => resultado.status === 'rejected').length;
       escalas.forEach(resultado => {
@@ -718,7 +720,7 @@ ouvirMes(anoAtual, mesAtual);
           ['manha', 'noite'].forEach(periodo => (repertorios[periodo] || []).forEach(musica => {
             const nome = String(musica?.nome || '').trim();
             const chave = chaveCatalogo(nome);
-            if (!chave) return;
+            if (!chave || chavesOcultas.has(chave)) return;
             const existente = mapa.get(chave);
             if (existente) {
               existente.cantor = existente.cantor || musica.cantor || '';
@@ -765,9 +767,18 @@ ouvirMes(anoAtual, mesAtual);
         if (!novoId) { alert('Informe um nome válido para a música.'); return; }
         salvar.disabled = true; salvar.textContent = '…';
         try {
-          const registro = { nome: novoNome, cantor: cantor.value.trim(), link: link.value.trim(), atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() };
+          const registro = { nome: novoNome, cantor: cantor.value.trim(), link: link.value.trim(), oculto: false, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() };
+          // Se o nome foi alterado, remove o documento antigo do catálogo ou marca a grafia antiga
+          // como oculta quando ela só existia nas escalas históricas (que não são alteradas).
           await db.collection('catalogoMusicas').doc(novoId).set(registro, { merge: true });
-          if (entry._origem === 'catalogo' && entry.id !== novoId) await db.collection('catalogoMusicas').doc(entry.id).delete();
+          const idAntigo = entry._origem === 'catalogo' ? entry.id : chaveCatalogo(entry.nome);
+          if (idAntigo && idAntigo !== novoId) {
+            if (entry._origem === 'catalogo') {
+              await db.collection('catalogoMusicas').doc(idAntigo).delete();
+            } else {
+              await db.collection('catalogoMusicas').doc(idAntigo).set({ nome: entry.nome, oculto: true, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            }
+          }
           entry.id = novoId; entry._origem = 'catalogo'; entry.nome = registro.nome; entry.cantor = registro.cantor; entry.link = registro.link;
           catalogoMusicasCache = null; carregandoCatalogo = null;
           adminEntries.sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
