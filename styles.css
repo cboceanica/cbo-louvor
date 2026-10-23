@@ -605,6 +605,23 @@ button.music-catalog-select {
 .music-catalog-option:hover, .music-catalog-option:focus { background: #e5e9f5; }
 .music-catalog-empty { padding: 10px 6px; color: #626779; font-size: 12px; }
 
-/* Mantém o menu do catálogo acima dos repertórios seguintes. */
-.music-block.catalog-open { overflow: visible; position: relative; z-index: 20; }
-.music-block.catalog-open .music-catalog-menu { z-index: 9999; }
+/* O menu precisa escapar do stacking context do próprio dia, não apenas do bloco. */
+.day-card:has(.music-block.catalog-open) {
+  position: relative;
+  z-index: 100;
+  overflow: visible;
+}
+.day-card__content:has(.music-block.catalog-open),
+.repertorio:has(.music-block.catalog-open) {
+  position: relative;
+  z-index: 101;
+  overflow: visible;
+}
+.music-block.catalog-open {
+  overflow: visible;
+  position: relative;
+  z-index: 102;
+}
+.music-block.catalog-open .music-catalog-menu {
+  z-index: 10000;
+}
