@@ -551,6 +551,18 @@ button:focus-visible, input:focus-visible {
   color: var(--text-main);
   font: 12px var(--font-body);
 }
+.save-repertoire-btn {
+  border: 0;
+  border-radius: 7px;
+  padding: 7px 10px;
+  background: var(--green, #2d7659);
+  color: white;
+  cursor: pointer;
+  font: 600 11px var(--font-body);
+}
+.save-repertoire-btn:hover { filter: brightness(1.08); }
+.save-repertoire-btn:disabled { opacity: .65; cursor: wait; }
+.save-repertoire-btn--pending { background: #a85b22; }
 .copy-morning-btn {
   border: 0;
   border-radius: 7px;

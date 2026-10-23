@@ -262,6 +262,8 @@ function quantidadeMusicas(musicas) {
 function criarBlocoMusicas(dia, periodo, titulo, musicas) {
   const bloco = document.createElement('div');
   bloco.className = `music-block music-block--${periodo}`;
+  // Mantém um rascunho local enquanto a pessoa edita; nada é enviado ao Firestore até clicar em Salvar.
+  let rascunhoMusicas = (musicas || []).map(m => ({ ...(m || {}) }));
   bloco.dataset.dia = String(dia);
   bloco.dataset.periodo = periodo;
 
@@ -286,6 +288,12 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
   quantidade.value = quantidadeMusicas(musicas);
   quantidadeLabel.appendChild(quantidade);
   controles.appendChild(quantidadeLabel);
+  const salvar = document.createElement('button');
+  salvar.type = 'button';
+  salvar.className = 'save-repertoire-btn';
+  salvar.textContent = 'Salvar repertório';
+  salvar.addEventListener('click', () => salvarRepertorioBloco(dia, periodo, Number(quantidade.value), rascunhoMusicas, salvar));
+  controles.appendChild(salvar);
   topo.appendChild(controles);
   bloco.appendChild(topo);
 
@@ -320,7 +328,7 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
     [...tabela.querySelectorAll('.music-row:not(.music-row--header)')].forEach(el => el.remove());
     const n = Number(quantidade.value);
     for (let i = 0; i < n; i++) {
-      const musica = musicas[i] || {};
+      const musica = rascunhoMusicas[i] || {};
       const linha = document.createElement('div');
       linha.className = 'music-row';
       linha.dataset.indice = String(i);
@@ -352,7 +360,7 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
         cantorInput.value = registro.cantor || '';
         linkInput.value = registro.link || '';
         atualizarBotaoLink(linha.querySelector('.music-link-btn'), linkInput.value);
-        ['nome','cantor','link'].forEach(campo => agendarSalvamentoMusica(dia, periodo, i, campo, linha.querySelector(`[data-campo="${campo}"]`).value));
+        ['nome','cantor','link'].forEach(campo => { rascunhoMusicas[i] = { ...(rascunhoMusicas[i] || {}), [campo]: linha.querySelector(`[data-campo="${campo}"]`).value }; });
       });
       nomeWrap.appendChild(catalogo);
 
@@ -369,7 +377,9 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
         input.dataset.campo = campo;
         input.setAttribute('aria-label', `${titulo} — música ${i + 1} — ${campo}`);
         input.addEventListener('input', () => {
-          agendarSalvamentoMusica(dia, periodo, i, campo, input.value);
+          rascunhoMusicas[i] = { ...(rascunhoMusicas[i] || {}), [campo]: input.value };
+          salvar.textContent = 'Salvar repertório *';
+          salvar.classList.add('save-repertoire-btn--pending');
           if (campo === 'link') atualizarBotaoLink(linkBtn, input.value);
         });
         if (campo === 'nome') nomeWrap.appendChild(input);
@@ -392,14 +402,47 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
     atualizarResumo();
   }
   quantidade.addEventListener('change', () => {
+    const n = Number(quantidade.value);
+    while (rascunhoMusicas.length < n) rascunhoMusicas.push({});
+    rascunhoMusicas = rascunhoMusicas.slice(0, n);
     desenharLinhas();
-    agendarAjusteQuantidade(dia, periodo, Number(quantidade.value));
+    salvar.textContent = 'Salvar repertório *';
+    salvar.classList.add('save-repertoire-btn--pending');
   });
   detalhes.addEventListener('toggle', atualizarResumo);
   desenharLinhas();
   detalhes.appendChild(tabela);
   bloco.appendChild(detalhes);
   return bloco;
+}
+
+async function salvarRepertorioBloco(dia, periodo, quantidade, rascunho, botao) {
+  if (!firebaseOk) { alert('O banco de dados ainda não foi configurado.'); return; }
+  const bloco = document.querySelector(`.music-block[data-dia="${dia}"][data-periodo="${periodo}"]`);
+  const valores = [...(rascunho || [])].slice(0, quantidade).map(m => ({
+    nome: String(m.nome || '').trim(),
+    cantor: String(m.cantor || '').trim(),
+    tom: String(m.tom || '').trim(),
+    link: String(m.link || '').trim()
+  }));
+  while (valores.length < quantidade) valores.push({});
+  botao.disabled = true;
+  botao.textContent = 'Salvando…';
+  try {
+    const ref = db.collection('escalas').doc(idDoMes(anoAtual, mesAtual));
+    await ref.set({ dias: { [String(dia)]: { musicas: { [periodo]: valores } } } }, { merge: true });
+    for (const musica of valores) {
+      if (musica.nome) await salvarNoCatalogo(musica);
+    }
+    botao.textContent = 'Salvo ✓';
+    botao.classList.remove('save-repertoire-btn--pending');
+  } catch (e) {
+    console.error(e);
+    botao.textContent = 'Tentar salvar novamente';
+    alert('Não foi possível salvar o repertório. Confira a conexão e tente novamente.');
+  } finally {
+    botao.disabled = false;
+  }
 }
 
 let catalogoMusicasCache = null;
@@ -448,21 +491,22 @@ async function salvarNoCatalogo(musica) {
   } catch (e) { console.warn('Não foi possível atualizar o catálogo de músicas:', e); }
 }
 
-async function agendarAjusteQuantidade(dia, periodo, quantidade) {
-  if (!firebaseOk) return;
-  const ref = db.collection('escalas').doc(idDoMes(anoAtual, mesAtual));
-  const diaKey = String(dia);
-  const atuais = [...((((dadosMes[diaKey] || {}).musicas || {})[periodo]) || [])];
-  while (atuais.length < quantidade) atuais.push({});
-  try {
-    await ref.set({ dias: { [diaKey]: { musicas: { [periodo]: atuais.slice(0, quantidade) } } } }, { merge: true });
-  } catch (e) { console.error(e); alert('Não foi possível salvar a quantidade de músicas.'); }
-}
-
 async function copiarRepertorioManhaParaNoite(dia) {
   if (!firebaseOk) { alert('O banco de dados ainda não foi configurado.'); return; }
-  const registro = dadosMes[String(dia)] || {};
-  const manha = (((registro.musicas || {}).manha) || []).map(m => ({ ...(m || {}) }));
+  // Copia o que está visível no formulário, inclusive alterações ainda não salvas.
+  const blocoManha = document.querySelector(`.music-block[data-dia="${dia}"][data-periodo="manha"]`);
+  let manha = [];
+  if (blocoManha) {
+    const quantidade = Number(blocoManha.querySelector('.music-block__controls select')?.value || 0);
+    manha = [...blocoManha.querySelectorAll('.music-row:not(.music-row--header)')].slice(0, quantidade).map(linha => {
+      const valor = campo => linha.querySelector(`[data-campo="${campo}"]`)?.value?.trim() || '';
+      return { nome: valor('nome'), cantor: valor('cantor'), tom: valor('tom'), link: valor('link') };
+    });
+  }
+  if (!manha.length) {
+    const registro = dadosMes[String(dia)] || {};
+    manha = (((registro.musicas || {}).manha) || []).map(m => ({ ...(m || {}) }));
+  }
   if (!manha.some(m => [m.nome, m.cantor, m.tom, m.link].some(v => String(v || '').trim()))) {
     alert('Preencha primeiro o repertório do culto da manhã.'); return;
   }
@@ -470,6 +514,7 @@ async function copiarRepertorioManhaParaNoite(dia) {
   const ref = db.collection('escalas').doc(idDoMes(anoAtual, mesAtual));
   try {
     await ref.set({ dias: { [String(dia)]: { musicas: { noite: manha } } } }, { merge: true });
+    for (const musica of manha) if (musica.nome) await salvarNoCatalogo(musica);
   } catch (e) { console.error(e); alert('Não foi possível copiar o repertório.'); }
 }
 
@@ -500,40 +545,6 @@ function atualizarBotaoLink(botao, valor) {
     botao.setAttribute('aria-disabled', 'true');
     botao.title = valor.trim() ? 'Link inválido' : 'Cole um link para habilitar';
   }
-}
-
-function agendarSalvamentoMusica(dia, periodo, indice, campo, valor) {
-  if (!firebaseOk) return;
-
-  const chaveTimer = `${anoAtual}-${mesAtual}-${dia}-${periodo}-${indice}-${campo}`;
-  clearTimeout(timersMusicas.get(chaveTimer));
-
-  const timer = setTimeout(async () => {
-    const ref = db.collection('escalas').doc(idDoMes(anoAtual, mesAtual));
-    const diaKey = String(dia);
-    const musicasAtuais = [...(((dadosMes[diaKey] || {}).musicas || {})[periodo] || [])];
-
-    while (musicasAtuais.length < 5) musicasAtuais.push({});
-    musicasAtuais[indice] = { ...(musicasAtuais[indice] || {}), [campo]: valor.trim() };
-
-    try {
-      await ref.set({
-        dias: {
-          [diaKey]: {
-            musicas: {
-              [periodo]: musicasAtuais
-            }
-          }
-        }
-      }, { merge: true });
-      if (campo === 'nome' || campo === 'cantor' || campo === 'link') await salvarNoCatalogo(musicasAtuais[indice] || {});
-    } catch (e) {
-      console.error(e);
-      alert('Não foi possível salvar o repertório.');
-    }
-  }, 600);
-
-  timersMusicas.set(chaveTimer, timer);
 }
 
 document.getElementById('prevMonth').addEventListener('click', () => mudarMes(-1));

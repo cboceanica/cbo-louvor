@@ -6,9 +6,11 @@ Alterações desta versão:
 - cada domingo possui repertório para culto da manhã e culto da noite;
 - cada período possui 5 músicas;
 - cada música possui Nome, Cantor/Banda, Tom e Link;
-- repertório é salvo automaticamente no mesmo Firestore já utilizado pelo sistema.
+- repertório fica como rascunho durante a edição e só é gravado ao clicar em “Salvar repertório”.
+- copiar o repertório da manhã para a noite considera também as alterações ainda não salvas no formulário.
 
 Para publicar no GitHub Pages, substitua index.html, app.js e styles.css pelos arquivos desta pasta.
+Preserve seu firebase-config.js atual ao publicar.
 Os arquivos firebase-config.js e firebase-config.example.js foram mantidos.
 
 - Links do repertório agora exibem botão **🔗 Abrir**, habilitado quando houver um endereço válido.
