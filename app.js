@@ -686,10 +686,42 @@ ouvirMes(anoAtual, mesAtual);
     statusEl.textContent = 'Carregando músicas…';
     listEl.replaceChildren();
     try {
+      // Carrega primeiro a coleção principal e depois complementa com músicas
+      // que existem apenas nas escalas mensais antigas.
+      const mapa = new Map();
       const snap = await db.collection('catalogoMusicas').get();
-      adminEntries = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
-      statusEl.textContent = adminEntries.length ? `${adminEntries.length} músicas no catálogo.` : 'Nenhuma música encontrada na coleção catalogoMusicas. Confira as permissões de leitura.';
+      snap.docs.forEach(doc => {
+        const dados = doc.data() || {};
+        const chave = chaveCatalogo(dados.nome || '');
+        if (chave) mapa.set(chave, { id: doc.id, ...dados, _origem: 'catalogo' });
+      });
+      const ano = new Date().getFullYear();
+      const meses = [];
+      for (const a of [ano - 1, ano, ano + 1]) {
+        for (let m = 1; m <= 12; m++) meses.push(`${a}-${String(m).padStart(2, '0')}`);
+      }
+      const escalas = await Promise.allSettled(meses.map(id => db.collection('escalas').doc(id).get()));
+      escalas.forEach(resultado => {
+        if (resultado.status !== 'fulfilled' || !resultado.value.exists) return;
+        const dias = resultado.value.data()?.dias || {};
+        Object.values(dias).forEach(dia => {
+          const repertorios = dia?.musicas || {};
+          ['manha', 'noite'].forEach(periodo => (repertorios[periodo] || []).forEach(musica => {
+            const nome = String(musica?.nome || '').trim();
+            const chave = chaveCatalogo(nome);
+            if (!chave) return;
+            const existente = mapa.get(chave);
+            if (existente) {
+              existente.cantor = existente.cantor || musica.cantor || '';
+              existente.link = existente.link || musica.link || '';
+            } else {
+              mapa.set(chave, { id: chave, nome, cantor: musica.cantor || '', link: musica.link || '', _origem: 'escala' });
+            }
+          }));
+        });
+      });
+      adminEntries = [...mapa.values()].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+      statusEl.textContent = adminEntries.length ? `${adminEntries.length} músicas encontradas (catálogo e escalas salvas).` : 'Nenhuma música encontrada. Confira as permissões de leitura do Firestore.';
       renderAdminEntries();
     } catch (err) {
       console.error('Erro ao abrir administração do catálogo:', err);
@@ -718,8 +750,8 @@ ouvirMes(anoAtual, mesAtual);
         try {
           const registro = { nome: novoNome, cantor: cantor.value.trim(), link: link.value.trim(), atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() };
           await db.collection('catalogoMusicas').doc(novoId).set(registro, { merge: true });
-          if (entry.id !== novoId) await db.collection('catalogoMusicas').doc(entry.id).delete();
-          entry.id = novoId; entry.nome = registro.nome; entry.cantor = registro.cantor; entry.link = registro.link;
+          if (entry._origem === 'catalogo' && entry.id !== novoId) await db.collection('catalogoMusicas').doc(entry.id).delete();
+          entry.id = novoId; entry._origem = 'catalogo'; entry.nome = registro.nome; entry.cantor = registro.cantor; entry.link = registro.link;
           catalogoMusicasCache = null; carregandoCatalogo = null;
           adminEntries.sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
           statusEl.textContent = `“${novoNome}” foi salva no catálogo.`;
@@ -735,8 +767,8 @@ ouvirMes(anoAtual, mesAtual);
         if (!confirm(`Excluir “${entry.nome}” do catálogo? Isso não apaga a música das escalas antigas.`)) return;
         excluir.disabled = true;
         try {
-          await db.collection('catalogoMusicas').doc(entry.id).delete();
-          adminEntries = adminEntries.filter(m => m.id !== entry.id);
+          if (entry._origem === 'catalogo') await db.collection('catalogoMusicas').doc(entry.id).delete();
+          adminEntries = adminEntries.filter(m => m !== entry);
           catalogoMusicasCache = null; carregandoCatalogo = null;
           statusEl.textContent = `“${entry.nome}” foi removida da coleção do catálogo.`;
           renderAdminEntries();
