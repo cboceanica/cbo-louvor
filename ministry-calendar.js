@@ -21,7 +21,7 @@ function listenMembers(){
  if (!db) { memberStatus.textContent = 'Banco de dados indisponível.'; return; }
  unsubscribeMembers = db.collection('escalas').doc(ministry + '-members').onSnapshot(snap => {
    const saved = snap.exists && Array.isArray(snap.data().names) ? snap.data().names : null;
-   memberNames = saved && saved.length ? saved : [...cfg.names];
+   memberNames = saved !== null ? saved : [...cfg.names];
    renderMembers(); render();
  }, err => { console.error(err); memberStatus.textContent = 'Não foi possível carregar os membros.'; });
 }
