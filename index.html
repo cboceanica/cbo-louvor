@@ -2,128 +2,39 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#f5efe3">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#123b36">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Escala CBO">
+<meta name="apple-mobile-web-app-title" content="Ministérios CBO">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<title>Escala do Louvor</title>
+<title>Ministérios CBO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--green:#123b36;--green2:#1d6256;--cream:#f5efe3;--ink:#1f302d}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#e3eee7 0,#f5efe3 58%,#eee5d5 100%);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;justify-content:center;align-items:center;padding:24px}
+.wrap{width:min(100%,760px);text-align:center}.logo{width:94px;height:94px;object-fit:contain;margin:0 auto 18px}.eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--green2)}h1{font-size:clamp(2rem,6vw,3.3rem);line-height:1.05;color:var(--green);margin:10px 0 12px;letter-spacing:-.05em}.intro{font-size:1rem;line-height:1.6;color:#53635e;margin:0 auto 30px;max-width:490px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.ministry{display:flex;min-height:126px;flex-direction:column;align-items:flex-start;justify-content:space-between;text-decoration:none;text-align:left;background:rgba(255,255,255,.78);border:1px solid #d9e1d9;border-radius:20px;padding:22px;color:var(--green);box-shadow:0 8px 24px #173e3010;transition:transform .18s,box-shadow .18s}.ministry:hover{transform:translateY(-3px);box-shadow:0 14px 28px #173e3020}.emoji{font-size:1.8rem;margin-bottom:14px}.name{font-size:1.08rem;font-weight:800}.go{font-size:.84rem;color:var(--green2);margin-top:7px}.foot{margin-top:28px;font-size:.78rem;color:#75827c}@media(max-width:430px){body{padding:18px}.grid{gap:10px}.ministry{padding:17px;min-height:116px;border-radius:16px}.name{font-size:1rem}.intro{font-size:.94rem}}
+</style>
 </head>
 <body>
-<div class="app">
-  <header class="board-header">
-    <div class="board-header__brand">
-      <img src="logo-igreja.png" alt="Comunidade Batista Oceânica" class="church-logo">
-      <div class="board-header__title">
-        <span class="board-header__eyebrow">Ministério de Louvor</span>
-        <h1>Quadro de Escala</h1>
-      </div>
-    </div>
-    <div class="board-header__you">
-      <label for="meuNome">Seu nome</label>
-      <input type="text" id="meuNome" placeholder="Como você se chama?" autocomplete="off">
-      <span class="save-hint" id="saveHint">salvo neste navegador</span>
-    </div>
-  </header>
-
-  <div class="install-app-wrap">
-    <button type="button" id="installAppBtn" class="install-app-btn">⬇️ Baixe aqui o app</button>
-    <p id="installAppHelp" class="install-app-help" hidden></p>
-  </div>
-
-  <div class="month-nav">
-    <button id="prevMonth" class="month-nav__btn" aria-label="Mês anterior">&#8592;</button>
-    <div class="month-nav__label">
-      <span id="monthLabel">Agosto</span> <span id="yearLabel" class="month-nav__year">2026</span>
-    </div>
-    <button id="nextMonth" class="month-nav__btn" aria-label="Próximo mês">&#8594;</button>
-    <div class="month-nav__status" id="connStatus">conectando…</div>
-  </div>
-
-  <main id="calendarGrid" class="calendar-grid" aria-live="polite"></main>
-
-  <footer class="app-footer">
-    Feito para servir de coração &middot; repertório salvo ao clicar em Salvar
-  </footer>
-</div>
-
-<section id="catalogAdmin" class="catalog-admin" hidden aria-label="Administração do catálogo">
-  <div class="catalog-admin__panel">
-    <div class="catalog-admin__head"><h2>Editar catálogo de músicas</h2><button type="button" id="catalogAdminClose" aria-label="Fechar">✕</button></div>
-    <p>Área administrativa. Edite nome, cantor e link; alterações são gravadas no catálogo.</p>
-    <div class="catalog-admin__tools"><input id="catalogAdminSearch" type="search" placeholder="Buscar música ou cantor..." autocomplete="off"><button type="button" id="catalogAdminAdd">+ Adicionar música</button></div>
-    <div id="catalogAdminList" class="catalog-admin__list"></div>
-    <div id="catalogAdminStatus" role="status"></div>
-  </div>
-</section>
-
-<template id="instrumentPillTemplate">
-  <button type="button" class="pill">
-    <span class="pill__icon"></span>
-    <span class="pill__label"></span>
-    <span class="pill__name"></span>
-  </button>
-</template>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="app.js"></script>
+<main class="wrap">
+<img class="logo" src="./logo-igreja.png" alt="Logo da Comunidade Batista Oceânica" onerror="this.style.display='none'">
+<div class="eyebrow">Comunidade Batista Oceânica</div>
+<h1>Ministérios CBO</h1>
+<p class="intro">Escolha o ministério para acessar sua página.</p>
+<nav class="grid" aria-label="Escolha um ministério">
+<a class="ministry" href="./louvor.html"><span><span class="emoji">🎶</span><br><span class="name">Louvor</span></span><span class="go">Acessar ministério →</span></a>
+<a class="ministry" href="./sonoplastia.html"><span><span class="emoji">🎚️</span><br><span class="name">Sonoplastia</span></span><span class="go">Acessar ministério →</span></a>
+<a class="ministry" href="./midia.html"><span><span class="emoji">🎥</span><br><span class="name">Mídia</span></span><span class="go">Acessar ministério →</span></a>
+<a class="ministry" href="./comunicacao.html"><span><span class="emoji">📣</span><br><span class="name">Comunicação</span></span><span class="go">Acessar ministério →</span></a>
+</nav>
+<footer class="foot">CBO · Comunidade Batista Oceânica</footer>
+</main>
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(error => console.warn('PWA: não foi possível registrar o service worker', error));
-    });
-  }
-</script>
-<script>
-(() => {
-  const button = document.getElementById('installAppBtn');
-  const help = document.getElementById('installAppHelp');
-  let installPrompt = null;
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isSafari = isIOS && /safari/i.test(navigator.userAgent) && !/crios|fxios|edgios/i.test(navigator.userAgent);
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  const showHelp = (message) => { help.textContent = message; help.hidden = false; };
-
-  if (isStandalone) {
-    button.textContent = '✓ App instalado';
-    button.disabled = true;
-  }
-  window.addEventListener('beforeinstallprompt', (event) => {
-    event.preventDefault();
-    installPrompt = event;
-    button.textContent = '⬇️ Baixe aqui o app';
-  });
-  window.addEventListener('appinstalled', () => {
-    installPrompt = null;
-    button.textContent = '✓ App instalado';
-    button.disabled = true;
-    showHelp('Pronto! O app foi instalado no seu celular.');
-  });
-  button.addEventListener('click', async () => {
-    if (isStandalone) return;
-    if (installPrompt) {
-      installPrompt.prompt();
-      await installPrompt.userChoice;
-      installPrompt = null;
-      return;
-    }
-    if (isIOS) {
-      showHelp(isSafari
-        ? 'Para instalar: toque em Compartilhar (quadrado com seta para cima) e escolha “Adicionar à Tela de Início”. Depois toque em “Adicionar”.'
-        : 'Para instalar no iPhone, abra este site no Safari. Depois toque em Compartilhar e escolha “Adicionar à Tela de Início”.');
-      return;
-    }
-    showHelp('Se a opção de instalação não aparecer automaticamente, abra o menu ⋮ do Chrome e escolha “Instalar app” ou “Adicionar à tela inicial”.');
-  });
-})();
+if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('PWA',e)));
 </script>
 </body>
 </html>
