@@ -88,7 +88,7 @@ function render(){
    if (!cfg.weekdays.includes(date.getDay())) continue;
    total++;
    const key=String(day), assigned=data[key]?.responsavel || '', assigned2=data[key]?.responsavel2 || '';
-   const row=document.createElement('article'); row.className='day day-row';
+   const row=document.createElement('article'); row.className='day day-row' + ((cfg.maxPeople || 1) > 1 ? ' two-person-row' : '');
    const dateText=document.createElement('div'); dateText.className='datebox';
    dateText.innerHTML='<span class="date">'+String(day).padStart(2,'0')+'</span><span class="weekday">'+weekdays[date.getDay()]+'</span>';
    const select=document.createElement('select'); select.className='person'; select.id='person-'+key; select.setAttribute('aria-label','Responsável de '+day+' '+months[month]);
