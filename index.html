@@ -42,6 +42,16 @@
   </footer>
 </div>
 
+<section id="catalogAdmin" class="catalog-admin" hidden aria-label="Administração do catálogo">
+  <div class="catalog-admin__panel">
+    <div class="catalog-admin__head"><h2>Editar catálogo de músicas</h2><button type="button" id="catalogAdminClose" aria-label="Fechar">✕</button></div>
+    <p>Área administrativa. Edite nome, cantor e link; alterações são gravadas no catálogo.</p>
+    <input id="catalogAdminSearch" type="search" placeholder="Buscar música ou cantor..." autocomplete="off">
+    <div id="catalogAdminList" class="catalog-admin__list"></div>
+    <div id="catalogAdminStatus" role="status"></div>
+  </div>
+</section>
+
 <template id="instrumentPillTemplate">
   <button type="button" class="pill">
     <span class="pill__icon"></span>

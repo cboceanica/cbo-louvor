@@ -635,3 +635,107 @@ function mudarMes(delta) {
 }
 
 ouvirMes(anoAtual, mesAtual);
+
+// Administração discreta: cinco cliques rápidos na logo da igreja.
+(() => {
+  const logo = document.querySelector('.church-logo');
+  const modal = document.getElementById('catalogAdmin');
+  const listEl = document.getElementById('catalogAdminList');
+  const searchEl = document.getElementById('catalogAdminSearch');
+  const statusEl = document.getElementById('catalogAdminStatus');
+  if (!logo || !modal || !listEl) return;
+  let clicks = 0;
+  let clickTimer = null;
+  let adminEntries = [];
+  logo.style.cursor = 'default';
+  logo.addEventListener('click', () => {
+    clicks += 1;
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(() => { clicks = 0; }, 1400);
+    if (clicks >= 5) {
+      clicks = 0;
+      abrirAdminCatalogo();
+    }
+  });
+
+  document.getElementById('catalogAdminClose')?.addEventListener('click', () => { modal.hidden = true; });
+  modal.addEventListener('click', event => { if (event.target === modal) modal.hidden = true; });
+  searchEl?.addEventListener('input', renderAdminEntries);
+
+  async function abrirAdminCatalogo() {
+    if (!firebaseOk) { alert('O Firebase não está conectado.'); return; }
+    modal.hidden = false;
+    statusEl.textContent = 'Carregando músicas…';
+    listEl.replaceChildren();
+    try {
+      const snap = await db.collection('catalogoMusicas').get();
+      adminEntries = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+      statusEl.textContent = adminEntries.length ? `${adminEntries.length} músicas no catálogo.` : 'Nenhuma música encontrada na coleção catalogoMusicas. Confira as permissões de leitura.';
+      renderAdminEntries();
+    } catch (err) {
+      console.error('Erro ao abrir administração do catálogo:', err);
+      statusEl.textContent = 'Não foi possível ler o catálogo. Verifique as regras do Firestore.';
+    }
+  }
+
+  function renderAdminEntries() {
+    if (modal.hidden) return;
+    const q = String(searchEl?.value || '').trim().toLocaleLowerCase('pt-BR');
+    listEl.replaceChildren();
+    const encontrados = adminEntries.filter(m => `${m.nome || ''} ${m.cantor || ''}`.toLocaleLowerCase('pt-BR').includes(q));
+    encontrados.forEach(entry => {
+      const row = document.createElement('div'); row.className = 'catalog-admin__item';
+      const nome = criarCampo(entry.nome, 'Nome da música');
+      const cantor = criarCampo(entry.cantor, 'Cantor / banda');
+      const link = criarCampo(entry.link, 'Link');
+      link.type = 'url';
+      const salvar = document.createElement('button'); salvar.type = 'button'; salvar.textContent = 'Salvar';
+      salvar.addEventListener('click', async () => {
+        const novoNome = nome.value.trim();
+        if (!novoNome) { alert('O nome da música não pode ficar vazio.'); nome.focus(); return; }
+        const novoId = chaveCatalogo(novoNome);
+        if (!novoId) { alert('Informe um nome válido para a música.'); return; }
+        salvar.disabled = true; salvar.textContent = '…';
+        try {
+          const registro = { nome: novoNome, cantor: cantor.value.trim(), link: link.value.trim(), atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() };
+          await db.collection('catalogoMusicas').doc(novoId).set(registro, { merge: true });
+          if (entry.id !== novoId) await db.collection('catalogoMusicas').doc(entry.id).delete();
+          entry.id = novoId; entry.nome = registro.nome; entry.cantor = registro.cantor; entry.link = registro.link;
+          catalogoMusicasCache = null; carregandoCatalogo = null;
+          adminEntries.sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+          statusEl.textContent = `“${novoNome}” foi salva no catálogo.`;
+          renderAdminEntries();
+        } catch (err) {
+          console.error('Erro ao salvar edição do catálogo:', err);
+          statusEl.textContent = 'Não foi possível salvar. Verifique as permissões de gravação do Firestore.';
+          salvar.disabled = false; salvar.textContent = 'Salvar';
+        }
+      });
+      const excluir = document.createElement('button'); excluir.type = 'button'; excluir.className = 'catalog-admin__delete'; excluir.textContent = 'Excluir';
+      excluir.addEventListener('click', async () => {
+        if (!confirm(`Excluir “${entry.nome}” do catálogo? Isso não apaga a música das escalas antigas.`)) return;
+        excluir.disabled = true;
+        try {
+          await db.collection('catalogoMusicas').doc(entry.id).delete();
+          adminEntries = adminEntries.filter(m => m.id !== entry.id);
+          catalogoMusicasCache = null; carregandoCatalogo = null;
+          statusEl.textContent = `“${entry.nome}” foi removida da coleção do catálogo.`;
+          renderAdminEntries();
+        } catch (err) {
+          console.error('Erro ao excluir música do catálogo:', err);
+          statusEl.textContent = 'Não foi possível excluir. Verifique as permissões do Firestore.';
+          excluir.disabled = false;
+        }
+      });
+      row.append(nome, cantor, link, salvar, excluir); listEl.appendChild(row);
+    });
+    if (!encontrados.length) {
+      const vazio = document.createElement('p'); vazio.textContent = 'Nenhuma música corresponde à busca.'; listEl.appendChild(vazio);
+    }
+  }
+
+  function criarCampo(valor, placeholder) {
+    const input = document.createElement('input'); input.value = String(valor || ''); input.placeholder = placeholder; input.setAttribute('aria-label', placeholder); return input;
+  }
+})();
