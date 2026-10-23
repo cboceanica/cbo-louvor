@@ -604,3 +604,7 @@ button.music-catalog-select {
 .music-catalog-option { text-align: left; border: 0; border-radius: 5px; padding: 8px; background: #f4f5f8; color: #202438; cursor: pointer; font: 13px var(--font-body); }
 .music-catalog-option:hover, .music-catalog-option:focus { background: #e5e9f5; }
 .music-catalog-empty { padding: 10px 6px; color: #626779; font-size: 12px; }
+
+/* Mantém o menu do catálogo acima dos repertórios seguintes. */
+.music-block.catalog-open { overflow: visible; position: relative; z-index: 20; }
+.music-block.catalog-open .music-catalog-menu { z-index: 9999; }

@@ -352,10 +352,12 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
         try { lista = await carregarCatalogo(); }
         catch { return; }
         const menuAnterior = nomeWrap.querySelector('.music-catalog-menu');
-        if (menuAnterior) { menuAnterior.remove(); return; }
+        if (menuAnterior) { menuAnterior.remove(); nomeWrap.closest('.music-block')?.classList.remove('catalog-open'); return; }
         document.querySelectorAll('.music-catalog-menu').forEach(menu => menu.remove());
+        document.querySelectorAll('.music-block.catalog-open').forEach(block => block.classList.remove('catalog-open'));
         const menu = document.createElement('div');
         menu.className = 'music-catalog-menu';
+        nomeWrap.closest('.music-block')?.classList.add('catalog-open');
         const busca = document.createElement('input');
         busca.type = 'search';
         busca.placeholder = 'Buscar música ou cantor…';
@@ -392,6 +394,7 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
               salvar.textContent = 'Salvar repertório *';
               salvar.classList.add('save-repertoire-btn--pending');
               menu.remove();
+              nomeWrap.closest('.music-block')?.classList.remove('catalog-open');
             });
             resultados.appendChild(opcao);
           });
