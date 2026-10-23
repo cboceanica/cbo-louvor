@@ -18,6 +18,12 @@
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#e6eee7,#f5efe3 60%,#eee5d5);font-family:Inter,system-ui,sans-serif;color:var(--ink);min-height:100vh;padding:22px}
 main{width:min(100%,900px);margin:auto}.top{display:flex;align-items:center;gap:14px;margin:8px 0 20px}.logo{width:62px;height:62px;object-fit:contain}.eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--green2)}h1{margin:5px 0 0;font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:-.04em;color:var(--green)}.back{display:inline-block;color:var(--green2);font-size:.9rem;font-weight:700;text-decoration:none;margin:0 0 20px}.month{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fffdf9;border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:16px}.month button,.save{border:0;border-radius:11px;background:var(--green);color:white;font:inherit;font-weight:700;padding:11px 14px;cursor:pointer}.month-label{text-align:center;font-weight:800;color:var(--green)}.status{font-size:.83rem;color:var(--muted);margin:0 0 14px;min-height:1.2em}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.day{background:#fffdf9;border:1px solid var(--line);border-radius:18px;padding:17px;box-shadow:0 7px 20px #173e300a}.dayhead{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e8eee8;padding-bottom:12px;margin-bottom:14px}.date{font-size:1.4rem;font-weight:800;color:var(--green)}.weekday{text-transform:capitalize;color:var(--muted);font-size:.85rem}.selectlabel{display:block;font-size:.82rem;font-weight:700;margin-bottom:8px}.person{width:100%;border:1px solid #cbd8ce;border-radius:10px;padding:12px;background:white;color:var(--ink);font:inherit}.save{width:100%;margin-top:12px}.saved{font-size:.8rem;color:var(--green2);min-height:1.2em;margin-top:9px}.empty{background:#fffdf9;border:1px dashed #cbd8ce;border-radius:18px;padding:28px;text-align:center;color:var(--muted);grid-column:1/-1}.foot{text-align:center;color:#75827c;font-size:.78rem;margin:24px 0 10px}
 @media(max-width:580px){body{padding:15px}.grid{grid-template-columns:1fr}.month{padding:10px}.month button{padding:10px 12px}.logo{width:52px;height:52px}}
+
+.members{background:#fffdf9;border:1px solid var(--line);border-radius:18px;padding:18px;margin:0 0 18px}
+.members h2{font-size:1.1rem;margin:0 0 6px;color:var(--green)}.members-intro{margin:0 0 14px;font-size:.88rem;line-height:1.5;color:var(--muted)}
+.add-member-form{display:flex;gap:9px}.add-member-form input{min-width:0;flex:1;border:1px solid #cbd8ce;border-radius:10px;padding:12px;font:inherit}.add-member-form button{border:0;border-radius:10px;background:var(--green);color:#fff;padding:12px 14px;font:inherit;font-weight:700;cursor:pointer}
+.member-list{display:grid;gap:8px;margin-top:14px}.member-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;background:#f4f7f3;border-radius:10px}.member-name{font-weight:600}.remove-member{border:1px solid #e2b9b5;border-radius:8px;background:#fff8f7;color:#a33d35;padding:7px 10px;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}.member-status{min-height:1.2em;margin:10px 0 0;font-size:.82rem;color:var(--green2)}
+@media(max-width:480px){.add-member-form{flex-direction:column}.add-member-form button{width:100%}}
 </style>
 </head>
 <body>
@@ -26,6 +32,12 @@ main{width:min(100%,900px);margin:auto}.top{display:flex;align-items:center;gap:
 <header class="top"><img class="logo" src="./logo-igreja.png" alt="CBO"><div><div class="eyebrow">Comunidade Batista Oceânica</div><h1>🎚️ Escala de Sonoplastia</h1></div></header>
 <div class="month"><button type="button" id="prev" aria-label="Mês anterior">←</button><div class="month-label" id="monthLabel">Carregando…</div><button type="button" id="next" aria-label="Próximo mês">→</button></div>
 <p class="status" id="status" role="status">Conectando ao banco de dados…</p>
+<section class="members" id="membersPanel" aria-labelledby="membersTitle">
+<h2 id="membersTitle">Área do líder · Gerenciar membros</h2>
+<p class="members-intro">Cadastre novos integrantes ou exclua quem saiu. As escalas dos meses anteriores serão preservadas.</p>
+<div class="add-member-form"><input id="newMemberName" type="text" maxlength="80" placeholder="Nome do novo membro" autocomplete="off"><button type="button" id="addMember">+ Cadastrar membro</button></div>
+<div class="member-list" id="memberList" aria-live="polite"></div><p class="member-status" id="memberStatus" role="status"></p>
+</section>
 <section class="grid" id="calendar" aria-live="polite"></section>
 <footer class="foot">CBO · As escalas ficam salvas e podem ser consultadas em meses anteriores.</footer>
 </main>
