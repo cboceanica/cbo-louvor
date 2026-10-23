@@ -340,29 +340,66 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
       let linkBtn = null;
       const nomeWrap = document.createElement('div');
       nomeWrap.className = 'music-name-wrap';
-      const catalogo = document.createElement('select');
+      const catalogo = document.createElement('button');
+      catalogo.type = 'button';
       catalogo.className = 'music-catalog-select';
-      catalogo.setAttribute('aria-label', `${titulo} — selecionar música do catálogo ${i + 1}`);
-      const placeholder = document.createElement('option');
-      placeholder.value = '';
-      placeholder.textContent = 'Escolher do catálogo…';
-      catalogo.appendChild(placeholder);
-      catalogo.addEventListener('focus', () => carregarCatalogo(catalogo));
-      catalogo.addEventListener('pointerdown', () => carregarCatalogo(catalogo));
-      catalogo.addEventListener('click', () => carregarCatalogo(catalogo));
-      catalogo.addEventListener('change', () => {
-        const escolhida = catalogo.value;
-        if (!escolhida) return;
-        let registro;
-        try { registro = JSON.parse(escolhida); } catch { return; }
-        const nomeInput = linha.querySelector('[data-campo="nome"]');
-        const cantorInput = linha.querySelector('[data-campo="cantor"]');
-        const linkInput = linha.querySelector('[data-campo="link"]');
-        nomeInput.value = registro.nome || '';
-        cantorInput.value = registro.cantor || '';
-        linkInput.value = registro.link || '';
-        atualizarBotaoLink(linha.querySelector('.music-link-btn'), linkInput.value);
-        ['nome','cantor','link'].forEach(campo => { rascunhoMusicas[i] = { ...(rascunhoMusicas[i] || {}), [campo]: linha.querySelector(`[data-campo="${campo}"]`).value }; });
+      catalogo.textContent = 'Escolher do catálogo ▾';
+      catalogo.setAttribute('aria-label', `${titulo} — escolher música do catálogo ${i + 1}`);
+      catalogo.addEventListener('click', async () => {
+        // Botão abre uma lista própria depois de carregar os dados; não depende
+        // do comportamento assíncrono de um <select> nativo em celular/navegador.
+        let lista;
+        try { lista = await carregarCatalogo(); }
+        catch { return; }
+        const menuAnterior = nomeWrap.querySelector('.music-catalog-menu');
+        if (menuAnterior) { menuAnterior.remove(); return; }
+        document.querySelectorAll('.music-catalog-menu').forEach(menu => menu.remove());
+        const menu = document.createElement('div');
+        menu.className = 'music-catalog-menu';
+        const busca = document.createElement('input');
+        busca.type = 'search';
+        busca.placeholder = 'Buscar música ou cantor…';
+        busca.className = 'music-catalog-search';
+        menu.appendChild(busca);
+        const resultados = document.createElement('div');
+        resultados.className = 'music-catalog-results';
+        menu.appendChild(resultados);
+        const renderResultados = () => {
+          resultados.replaceChildren();
+          const termo = busca.value.trim().toLocaleLowerCase('pt-BR');
+          const filtradas = (lista || []).filter(m => `${m.nome} ${m.cantor}`.toLocaleLowerCase('pt-BR').includes(termo));
+          if (!filtradas.length) {
+            const vazio = document.createElement('div');
+            vazio.className = 'music-catalog-empty';
+            vazio.textContent = lista?.length ? 'Nenhuma música encontrada.' : 'Nenhuma música salva no catálogo.';
+            resultados.appendChild(vazio);
+            return;
+          }
+          filtradas.forEach(registro => {
+            const opcao = document.createElement('button');
+            opcao.type = 'button';
+            opcao.className = 'music-catalog-option';
+            opcao.textContent = `${registro.nome}${registro.cantor ? ' — ' + registro.cantor : ''}`;
+            opcao.addEventListener('click', () => {
+              const nomeInput = linha.querySelector('[data-campo="nome"]');
+              const cantorInput = linha.querySelector('[data-campo="cantor"]');
+              const linkInput = linha.querySelector('[data-campo="link"]');
+              nomeInput.value = registro.nome || '';
+              cantorInput.value = registro.cantor || '';
+              linkInput.value = registro.link || '';
+              atualizarBotaoLink(linha.querySelector('.music-link-btn'), linkInput.value);
+              ['nome','cantor','link'].forEach(campo => { rascunhoMusicas[i] = { ...(rascunhoMusicas[i] || {}), [campo]: linha.querySelector(`[data-campo="${campo}"]`).value }; });
+              salvar.textContent = 'Salvar repertório *';
+              salvar.classList.add('save-repertoire-btn--pending');
+              menu.remove();
+            });
+            resultados.appendChild(opcao);
+          });
+        };
+        busca.addEventListener('input', renderResultados);
+        renderResultados();
+        nomeWrap.appendChild(menu);
+        busca.focus();
       });
       nomeWrap.appendChild(catalogo);
 
@@ -469,73 +506,45 @@ function mesclarMusicaCatalogo(lista, musica) {
   } else lista.push(registro);
 }
 
-async function carregarCatalogo(selectAlvo) {
+async function carregarCatalogo() {
   if (!firebaseOk) {
     alert('O catálogo precisa de conexão com o Firebase.');
-    return;
+    throw new Error('Firebase não configurado');
   }
-  const select = selectAlvo || document.activeElement;
-  if (!select || !select.classList?.contains('music-catalog-select')) return;
-
-  if (!catalogoMusicasCache) {
-    if (!carregandoCatalogo) {
-      carregandoCatalogo = (async () => {
-        const lista = [];
-        // Primeiro tenta a coleção própria do catálogo.
-        try {
-          const snapshot = await db.collection('catalogoMusicas').get();
-          snapshot.forEach(doc => mesclarMusicaCatalogo(lista, doc.data()));
-        } catch (err) {
-          console.warn('Leitura de catalogoMusicas indisponível; tentando recuperar pelas escalas salvas.', err);
-        }
-        // Fallback: reconstrói o catálogo usando repertórios já salvos nos documentos mensais.
-        // Isso permite aproveitar músicas antigas mesmo se a coleção catalogoMusicas estiver vazia.
-        const ano = new Date().getFullYear();
-        const meses = [];
-        for (const a of [ano - 1, ano, ano + 1]) {
-          for (let m = 1; m <= 12; m++) meses.push(`${a}-${String(m).padStart(2, '0')}`);
-        }
-        const resultados = await Promise.allSettled(
-          meses.map(id => db.collection('escalas').doc(id).get())
-        );
-        resultados.forEach(resultado => {
-          if (resultado.status !== 'fulfilled' || !resultado.value.exists) return;
-          const dias = resultado.value.data()?.dias || {};
-          Object.values(dias).forEach(dia => {
-            const repertorios = dia?.musicas || {};
-            ['manha', 'noite'].forEach(periodo => {
-              (repertorios[periodo] || []).forEach(musica => mesclarMusicaCatalogo(lista, musica));
-            });
-          });
+  if (catalogoMusicasCache) return catalogoMusicasCache;
+  if (!carregandoCatalogo) {
+    carregandoCatalogo = (async () => {
+      const lista = [];
+      try {
+        const snapshot = await db.collection('catalogoMusicas').get();
+        snapshot.forEach(doc => mesclarMusicaCatalogo(lista, doc.data()));
+      } catch (err) {
+        console.warn('Leitura de catalogoMusicas indisponível; tentando recuperar pelas escalas salvas.', err);
+      }
+      const ano = new Date().getFullYear();
+      const meses = [];
+      for (const a of [ano - 1, ano, ano + 1]) {
+        for (let m = 1; m <= 12; m++) meses.push(`${a}-${String(m).padStart(2, '0')}`);
+      }
+      const resultados = await Promise.allSettled(meses.map(id => db.collection('escalas').doc(id).get()));
+      resultados.forEach(resultado => {
+        if (resultado.status !== 'fulfilled' || !resultado.value.exists) return;
+        const dias = resultado.value.data()?.dias || {};
+        Object.values(dias).forEach(dia => {
+          const repertorios = dia?.musicas || {};
+          ['manha', 'noite'].forEach(periodo => (repertorios[periodo] || []).forEach(musica => mesclarMusicaCatalogo(lista, musica)));
         });
-        lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
-        return lista;
-      })().then(lista => { catalogoMusicasCache = lista; return lista; })
-        .catch(err => { console.error('Erro ao carregar catálogo:', err); throw err; })
-        .finally(() => { carregandoCatalogo = null; });
-    }
-    try {
-      await carregandoCatalogo;
-    } catch (err) {
-      alert('Não foi possível carregar o catálogo. Verifique as permissões de leitura do Firestore e tente novamente.');
-      return;
-    }
+      });
+      lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+      return lista;
+    })().then(lista => { catalogoMusicasCache = lista; return lista; })
+      .catch(err => { console.error('Erro ao carregar catálogo:', err); throw err; })
+      .finally(() => { carregandoCatalogo = null; });
   }
-
-  // Popula o seletor que foi acionado, sem depender de foco assíncrono de todos os campos.
-  if (select.options.length > 1) return;
-  (catalogoMusicasCache || []).forEach(m => {
-    const option = document.createElement('option');
-    option.value = JSON.stringify({ nome: m.nome || '', cantor: m.cantor || '', link: m.link || '' });
-    option.textContent = `${m.nome}${m.cantor ? ' — ' + m.cantor : ''}`;
-    select.appendChild(option);
-  });
-  if (!catalogoMusicasCache?.length) {
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = 'Nenhuma música salva ainda';
-    option.disabled = true;
-    select.appendChild(option);
+  try { return await carregandoCatalogo; }
+  catch (err) {
+    alert('Não foi possível carregar o catálogo. Verifique a conexão e as permissões de leitura do Firestore.');
+    throw err;
   }
 }
 

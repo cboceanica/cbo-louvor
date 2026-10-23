@@ -586,3 +586,21 @@ button:focus-visible, input:focus-visible {
   .music-block__controls { width: 100%; }
   .copy-morning-btn { white-space: normal; }
 }
+
+/* Seletor de catálogo acessível em desktop e celular */
+.music-name-wrap { position: relative; }
+button.music-catalog-select {
+  width: 100%; text-align: left; cursor: pointer; border: 1px solid rgba(58,63,88,.2);
+  border-radius: 7px; padding: 7px 9px; background: rgba(255,255,255,.95);
+  color: var(--text-main); font: 12px var(--font-body);
+}
+.music-catalog-menu {
+  position: absolute; z-index: 1000; top: 100%; left: 0; right: 0; margin-top: 3px;
+  background: white; border: 1px solid rgba(58,63,88,.25); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 8px; min-width: 220px;
+}
+.music-catalog-search { width: 100%; box-sizing: border-box; margin-bottom: 6px; }
+.music-catalog-results { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.music-catalog-option { text-align: left; border: 0; border-radius: 5px; padding: 8px; background: #f4f5f8; color: #202438; cursor: pointer; font: 13px var(--font-body); }
+.music-catalog-option:hover, .music-catalog-option:focus { background: #e5e9f5; }
+.music-catalog-empty { padding: 10px 6px; color: #626779; font-size: 12px; }
