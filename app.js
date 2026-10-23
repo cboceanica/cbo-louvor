@@ -140,6 +140,23 @@ function domingosDoMes(ano, mes) {
 }
 
 function renderCalendar() {
+  // O Firestore dispara um snapshot depois de cada salvamento. Preserve o foco e
+  // os repertórios abertos para que a atualização não feche a aba durante a digitação.
+  const ativo = document.activeElement;
+  let focoMusica = null;
+  if (ativo && ativo.matches && ativo.matches('.music-row input[data-campo]')) {
+    const linha = ativo.closest('.music-row');
+    const bloco = ativo.closest('.music-block');
+    focoMusica = {
+      dia: bloco?.dataset.dia, periodo: bloco?.dataset.periodo,
+      indice: linha?.dataset.indice, campo: ativo.dataset.campo,
+      inicio: typeof ativo.selectionStart === 'number' ? ativo.selectionStart : null,
+      fim: typeof ativo.selectionEnd === 'number' ? ativo.selectionEnd : null
+    };
+  }
+  const abertos = new Set([...elGrid.querySelectorAll('.music-details[open]')]
+    .map(d => `${d.closest('.music-block')?.dataset.dia}-${d.closest('.music-block')?.dataset.periodo}`));
+
   elMonthLabel.textContent = MESES[mesAtual];
   elYearLabel.textContent = anoAtual;
   elGrid.innerHTML = '';
@@ -147,6 +164,21 @@ function renderCalendar() {
   domingosDoMes(anoAtual, mesAtual).forEach(dia => {
     elGrid.appendChild(criarCardDoDia(dia));
   });
+
+  elGrid.querySelectorAll('.music-details').forEach(d => {
+    const bloco = d.closest('.music-block');
+    if (abertos.has(`${bloco?.dataset.dia}-${bloco?.dataset.periodo}`)) d.open = true;
+  });
+  if (focoMusica && focoMusica.dia && focoMusica.periodo && focoMusica.indice != null) {
+    const seletor = `.music-block[data-dia="${focoMusica.dia}"][data-periodo="${focoMusica.periodo}"] .music-row[data-indice="${focoMusica.indice}"] input[data-campo="${focoMusica.campo}"]`;
+    const novoInput = elGrid.querySelector(seletor);
+    if (novoInput) {
+      novoInput.focus({ preventScroll: true });
+      if (focoMusica.inicio !== null && novoInput.setSelectionRange) {
+        try { novoInput.setSelectionRange(focoMusica.inicio, focoMusica.fim); } catch (_) {}
+      }
+    }
+  }
 }
 
 function criarCardDoDia(dia) {
@@ -230,6 +262,8 @@ function quantidadeMusicas(musicas) {
 function criarBlocoMusicas(dia, periodo, titulo, musicas) {
   const bloco = document.createElement('div');
   bloco.className = `music-block music-block--${periodo}`;
+  bloco.dataset.dia = String(dia);
+  bloco.dataset.periodo = periodo;
 
   const topo = document.createElement('div');
   topo.className = 'music-block__top';
@@ -289,6 +323,7 @@ function criarBlocoMusicas(dia, periodo, titulo, musicas) {
       const musica = musicas[i] || {};
       const linha = document.createElement('div');
       linha.className = 'music-row';
+      linha.dataset.indice = String(i);
       const numero = document.createElement('span');
       numero.className = 'music-number';
       numero.textContent = i + 1;
