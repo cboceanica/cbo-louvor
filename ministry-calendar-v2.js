@@ -11,19 +11,22 @@ const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','A
 const weekdays = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
 let year = new Date().getFullYear(), month = new Date().getMonth(), data = {}, unsubscribe = null, db = null;
 const calendar = document.getElementById('calendar'), label = document.getElementById('monthLabel'), status = document.getElementById('status');
-let memberNames = [...cfg.names], unsubscribeMembers = null;
+let memberNames = [...cfg.names], unsubscribeMembers = null, remoteMembersReady = false;
+const localMembersKey = 'cbo-members-' + ministry;
+try { const local = JSON.parse(localStorage.getItem(localMembersKey) || 'null'); if (Array.isArray(local)) memberNames = local; } catch (_) {}
 const memberPanel = document.getElementById('membersPanel'), memberList = document.getElementById('memberList'), memberInput = document.getElementById('newMemberName'), memberStatus = document.getElementById('memberStatus');
 try {
  if (window.firebaseConfig?.apiKey && window.firebase) { if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig); db = firebase.firestore(); }
 } catch (e) { console.error(e); }
 function docId(){ return ministry + '-' + year + '-' + String(month+1).padStart(2,'0'); }
 function listenMembers(){
- if (!db) { memberStatus.textContent = 'Banco de dados indisponível.'; return; }
+ if (!db) { memberStatus.textContent = 'Sem conexão com o banco; alterações serão salvas neste navegador.'; renderMembers(); render(); return; }
  unsubscribeMembers = db.collection('escalas').doc(ministry + '-members').onSnapshot(snap => {
    const saved = snap.exists && Array.isArray(snap.data().names) ? snap.data().names : null;
-   memberNames = saved !== null ? saved : [...cfg.names];
+   if (saved !== null) { memberNames = saved; remoteMembersReady = true; try { localStorage.setItem(localMembersKey, JSON.stringify(memberNames)); } catch (_) {} }
+   else if (!remoteMembersReady) { memberNames = memberNames.length ? memberNames : [...cfg.names]; }
    renderMembers(); render();
- }, err => { console.error(err); memberStatus.textContent = 'Não foi possível carregar os membros.'; });
+ }, err => { console.error(err); memberStatus.textContent = 'Falha na sincronização dos membros. A lista local continua disponível neste navegador.'; renderMembers(); });
 }
 function renderMembers(){
  memberList.innerHTML = '';
@@ -32,26 +35,37 @@ function renderMembers(){
    const label = document.createElement('span'); label.textContent=name; label.className='member-name';
    const remove = document.createElement('button'); remove.type='button'; remove.className='remove-member'; remove.textContent='Excluir';
    remove.addEventListener('click', async()=>{
-     if(!confirm('Excluir '+name+' da lista de membros? As escalas antigas serão preservadas.')) return;
+     if(!confirm('Excluir '+name+' da lista? As escalas antigas serão preservadas.')) return;
      const updated = memberNames.filter(n=>n!==name);
-     try { await db.collection('escalas').doc(ministry + '-members').set({names:updated,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-       memberStatus.textContent = name + ' foi removido da lista.'; }
-     catch(e){console.error(e);memberStatus.textContent='Não foi possível excluir. Verifique as permissões do banco.';}
+     await saveMembers(updated, 'Membro removido da lista.');
    });
    row.append(label,remove); memberList.append(row);
  });
  if (!memberNames.length) { const empty=document.createElement('p'); empty.textContent='Nenhum membro cadastrado.'; memberList.append(empty); }
 }
+async function saveMembers(updated, successMessage){
+ memberNames = updated;
+ try { localStorage.setItem(localMembersKey, JSON.stringify(memberNames)); } catch (_) {}
+ renderMembers(); render();
+ if (!db) { memberStatus.textContent = successMessage + ' Salvo somente neste navegador (sem conexão com o banco).'; return; }
+ try {
+   await db.collection('escalas').doc(ministry + '-members').set({names:memberNames,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+   remoteMembersReady = true;
+   memberStatus.textContent = successMessage + ' Sincronizado com o banco.';
+ } catch(e) {
+   console.error(e);
+   memberStatus.textContent = successMessage + ' Salvo neste navegador, mas não sincronizou com o banco. Pode ser necessário liberar a gravação nas regras do Firestore.';
+ }
+}
 document.getElementById('addMember').addEventListener('click', async()=>{
  const name=memberInput.value.trim();
  if(!name){memberStatus.textContent='Digite o nome do novo membro.';memberInput.focus();return;}
  if(memberNames.some(n=>n.toLocaleLowerCase('pt-BR')===name.toLocaleLowerCase('pt-BR'))){memberStatus.textContent='Esse nome já está cadastrado.';return;}
- try {
-   const updated=[...memberNames,name].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-   await db.collection('escalas').doc(ministry + '-members').set({names:updated,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-   memberInput.value='';memberStatus.textContent=name+' foi cadastrado.';
- } catch(e){console.error(e);memberStatus.textContent='Não foi possível salvar. Verifique as permissões do banco.';}
+ const updated=[...memberNames,name].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ memberInput.value='';
+ await saveMembers(updated, name+' foi cadastrado.');
 });
+memberInput.addEventListener('keydown', event => { if (event.key === 'Enter') document.getElementById('addMember').click(); });
 function loadMonth(){
  if (unsubscribe) unsubscribe();
  data = {};
