@@ -10,7 +10,8 @@ const cfg = CONFIG[ministry];
 if (!cfg) return;
 const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const weekdays = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
-let year = new Date().getFullYear(), month = new Date().getMonth(), data = {}, unsubscribe = null, db = null;
+let year = 2026, month = new Date().getFullYear() === 2026 ? new Date().getMonth() : 0, data = {}, unsubscribe = null, db = null;
+const sonoplastiaEvents = new Map([["2026-01-10","Formatura Proami MI"],["2026-01-24","Luau"],["2026-01-25","Assembleia Administrativa"],["2026-01-31","Reunião de Pais - Tarde Alegre"],["2026-02-21","Tarde de Jogos Juventude"],["2026-03-01","Comunhão"],["2026-03-07","Mini-vigília de oração"],["2026-03-14","Clube Vôlei Adolescentes no Gramado"],["2026-03-21","Reunião de liderança; Culto Jovem - Templo"],["2026-03-28","Café com Elas"],["2026-03-29","Cantata Páscoa"],["2026-04-05","Ceia Senhor"],["2026-04-11","Noite de Oração - CR"],["2026-04-25","Clube do Vôlei (Gramado); Futebol em Itaipuaçu - CBO Piratininga X Itaipuaçu"],["2026-04-26","Ceia Comunhão"],["2026-05-02","Noite de Oração"],["2026-05-09","Luau Juventude / Praia Piratininga"],["2026-05-17","Folga Clayton"],["2026-05-24","Assembleia Administrativa; Ceia Comunhão"],["2026-06-06","Noite de oração"],["2026-06-13","Reunião País Adolescentes / Salão Vermelho; Copa do Mundo CBO (Esportes)"],["2026-06-20","Jantar Namorados"],["2026-06-27","Clube do Vôlei / Gramado"],["2026-06-28","Ceia Comunhão"],["2026-07-04","Programação Mensageiras; Noite de Oração"],["2026-07-05","Ceia Senhor"],["2026-07-18","Festa Country"],["2026-07-25","Reunião Liderança; Confraternização Futebol / Anexo; Culto das Mulheres"],["2026-07-26","Assembleia"],["2026-08-01","Aniversário da CBO"],["2026-08-02","Aniversário da CBO; Ceia Senhor"],["2026-08-08","Retiro Inventário CR — não haverá outras programações nesse horário"],["2026-08-15","Congresso Cartas Vivas"],["2026-08-16","Congresso Cartas Vivas Manhã/Noite"],["2026-08-23","Ceia Comunhão"],["2026-09-05","Clube Vôlei Adolescentes / Gramado; Noite Oração / Missões - Salão"],["2026-09-12","Encontro de Mulheres"],["2026-09-19","Ação Social no Gramado"],["2026-09-26","Culto Jovem / Templo"],["2026-09-27","Assembleia"],["2026-10-03","Noite Oração / Ministério Infantil - Salão"],["2026-10-24","Acampadentro Infantil"],["2026-10-31","Programação Esportes / Uso Igreja geral; Noite Oração - Ministério Casais - Salão"],["2026-11-14","Formatura CR"],["2026-11-21","Culto Mulheres"],["2026-11-22","Culto Amigo / Ceia Comunhão"],["2026-11-28","Reconhecimento/Formatura - Mensageiras"],["2026-12-05","Churrasco Curso Teologia"],["2026-12-12","Jantar de Natal"],["2026-12-19","Culto Jovem (Templo)"],["2026-12-27","Culto Amigo / Ceia Comunhão"]].map(([date,title]) => [date,title]));
 const calendar = document.getElementById('calendar'), label = document.getElementById('monthLabel'), status = document.getElementById('status');
 let memberNames = [...cfg.names], unsubscribeMembers = null, remoteMembersReady = false;
 const localMembersKey = 'cbo-members-' + ministry;
@@ -91,6 +92,12 @@ function render(){
    const row=document.createElement('article'); row.className='day day-row' + ((cfg.maxPeople || 1) > 1 ? ' two-person-row' : '');
    const dateText=document.createElement('div'); dateText.className='datebox';
    dateText.innerHTML='<span class="date">'+String(day).padStart(2,'0')+'</span><span class="weekday">'+weekdays[date.getDay()]+'</span>';
+   if (ministry === 'sonoplastia') {
+     const iso = year+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+     const eventLabel = document.createElement('span'); eventLabel.className='calendar-event-name';
+     eventLabel.textContent = date.getDay() === 2 ? 'Culto de Oração' : (sonoplastiaEvents.get(iso) || '');
+     if (eventLabel.textContent) dateText.append(eventLabel);
+   }
    const select=document.createElement('select'); select.className='person'; select.id='person-'+key; select.setAttribute('aria-label','Responsável de '+day+' '+months[month]);
    const blank=document.createElement('option'); blank.value=''; blank.textContent='— Selecionar membro —'; select.append(blank);
    memberNames.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;select.append(opt);});
@@ -120,8 +127,8 @@ function render(){
  }
  if(!total){const empty=document.createElement('div');empty.className='empty';empty.textContent='Não há dias de escala deste ministério neste mês.';calendar.append(empty);}
 }
-document.getElementById('prev').addEventListener('click',()=>{if(month===0){month=11;year--;}else month--;loadMonth();});
-document.getElementById('next').addEventListener('click',()=>{if(month===11){month=0;year++;}else month++;loadMonth();});
+document.getElementById('prev').addEventListener('click',()=>{if(month===0)return;month--;loadMonth();});
+document.getElementById('next').addEventListener('click',()=>{if(month===11)return;month++;loadMonth();});
 listenMembers();
 loadMonth();
 })();
