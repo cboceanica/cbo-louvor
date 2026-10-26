@@ -98,6 +98,39 @@ function render(){
      eventLabel.textContent = date.getDay() === 2 ? 'Culto de Oração' : (sonoplastiaEvents.get(iso) || '');
      if (eventLabel.textContent) dateText.append(eventLabel);
    }
+   if (ministry === 'sonoplastia' && date.getDay() === 0) {
+     row.classList.add('sunday-split');
+     const periods = document.createElement('div'); periods.className = 'sunday-periods';
+     const legacyAssigned = data[key]?.responsavel || '';
+     [
+       {label:'Manhã', field:'responsavelManha', id:'morning'},
+       {label:'Noite', field:'responsavelNoite', id:'night'}
+     ].forEach(period => {
+       const line = document.createElement('div'); line.className = 'sunday-period';
+       const periodLabel = document.createElement('strong'); periodLabel.className='period-label'; periodLabel.textContent=period.label;
+       const pick = document.createElement('select'); pick.className='person'; pick.setAttribute('aria-label',period.label+' de domingo '+day);
+       const blankOption = document.createElement('option'); blankOption.value=''; blankOption.textContent='— Selecionar técnico —'; pick.append(blankOption);
+       memberNames.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;pick.append(opt);});
+       const current = data[key]?.[period.field] ?? legacyAssigned;
+       if(current && !memberNames.includes(current)){const opt=document.createElement('option');opt.value=current;opt.textContent=current+' (fora da lista atual)';pick.append(opt);}
+       pick.value=current;
+       const savePeriod = document.createElement('button'); savePeriod.className='save'; savePeriod.type='button'; savePeriod.textContent='Salvar';
+       const savedPeriod = document.createElement('span'); savedPeriod.className='saved'; savedPeriod.setAttribute('aria-live','polite'); savedPeriod.textContent=current?'✓ Salvo':'';
+       savePeriod.addEventListener('click',async()=>{
+         if(!db){savedPeriod.textContent='Sem conexão';return;}
+         savePeriod.disabled=true;savePeriod.textContent='…';savedPeriod.textContent='';
+         try{
+           await db.collection('escalas').doc(docId()).set({dias:{[key]:{[period.field]:pick.value}}},{merge:true});
+           savedPeriod.textContent=pick.value?'✓ Salvo':'✓ Limpo';savePeriod.textContent='OK';
+         }catch(e){console.error(e);savedPeriod.textContent='Erro ao salvar';savePeriod.textContent='Tentar';}
+         finally{savePeriod.disabled=false;}
+       });
+       pick.addEventListener('change',()=>{savePeriod.textContent='Salvar';savedPeriod.textContent='Não salvo';});
+       line.append(periodLabel,pick,savePeriod,savedPeriod); periods.append(line);
+     });
+     row.append(dateText,periods); calendar.append(row);
+     continue;
+   }
    const select=document.createElement('select'); select.className='person'; select.id='person-'+key; select.setAttribute('aria-label','Responsável de '+day+' '+months[month]);
    const blank=document.createElement('option'); blank.value=''; blank.textContent='— Selecionar membro —'; select.append(blank);
    memberNames.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;select.append(opt);});
