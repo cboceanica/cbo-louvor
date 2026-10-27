@@ -31,6 +31,7 @@ main{width:min(100%,900px);margin:auto}.top{display:flex;align-items:center;gap:
 .two-person-row{grid-template-columns:minmax(108px,145px) minmax(0,1fr) minmax(0,1fr) auto minmax(64px,auto)}
 @media(max-width:580px){.two-person-row{grid-template-columns:1fr auto}.two-person-row .datebox{grid-column:1/-1}.two-person-row .person{grid-column:1/2}.two-person-row .person-second{grid-column:1/2}.two-person-row .save{grid-column:2/3}.two-person-row .saved{grid-column:1/-1}}
 
+.sunday-split{grid-template-columns:minmax(108px,145px) minmax(0,1fr);align-items:start}.sunday-periods{display:grid;gap:7px;min-width:0}.sunday-period{display:grid;grid-template-columns:54px minmax(0,1fr) auto minmax(64px,auto);align-items:center;gap:8px;min-width:0}.period-label{font-size:.82rem;color:var(--green)}@media(max-width:580px){.sunday-split{grid-template-columns:1fr}.sunday-period{grid-template-columns:48px minmax(0,1fr) auto}.sunday-period .saved{grid-column:2/-1}}
 </style>
 </head>
 <body>
@@ -51,7 +52,7 @@ main{width:min(100%,900px);margin:auto}.top{display:flex;align-items:center;gap:
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="./firebase-config.js"></script>
-<script src="./ministry-calendar-v4.js?v=4"></script>
+<script src="./ministry-calendar-v4.js?v=5"></script>
 
 <style>
 #cboRefreshApp{position:fixed;right:12px;bottom:12px;z-index:99999;border:0;border-radius:999px;padding:11px 15px;background:#123b36;color:#fff;font:700 14px system-ui,sans-serif;box-shadow:0 3px 14px #0003;cursor:pointer}
