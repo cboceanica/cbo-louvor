@@ -98,7 +98,7 @@ function render(){
      eventLabel.textContent = date.getDay() === 2 ? 'Culto de Oração' : (sonoplastiaEvents.get(iso) || '');
      if (eventLabel.textContent) dateText.append(eventLabel);
    }
-   if (ministry === 'sonoplastia' && date.getDay() === 0) {
+   if (['sonoplastia','midia','comunicacao','recepcao'].includes(ministry) && date.getDay() === 0) {
      row.classList.add('sunday-split');
      const periods = document.createElement('div'); periods.className = 'sunday-periods';
      const legacyAssigned = data[key]?.responsavel || '';
@@ -108,8 +108,8 @@ function render(){
      ].forEach(period => {
        const line = document.createElement('div'); line.className = 'sunday-period';
        const periodLabel = document.createElement('strong'); periodLabel.className='period-label'; periodLabel.textContent=period.label;
-       const pick = document.createElement('select'); pick.className='person'; pick.setAttribute('aria-label',period.label+' de domingo '+day);
-       const blankOption = document.createElement('option'); blankOption.value=''; blankOption.textContent='— Selecionar técnico —'; pick.append(blankOption);
+       const pick = document.createElement('select'); pick.className='person'; pick.setAttribute('aria-label',period.label+' de domingo '+day+' · '+cfg.title);
+       const blankOption = document.createElement('option'); blankOption.value=''; blankOption.textContent= ministry === 'sonoplastia' ? '— Selecionar técnico —' : '— Selecionar membro —'; pick.append(blankOption);
        memberNames.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;pick.append(opt);});
        const current = data[key]?.[period.field] ?? legacyAssigned;
        if(current && !memberNames.includes(current)){const opt=document.createElement('option');opt.value=current;opt.textContent=current+' (fora da lista atual)';pick.append(opt);}
