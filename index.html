@@ -17,6 +17,27 @@
 :root{color-scheme:light;--green:#123b36;--green2:#1d6256;--cream:#f5efe3;--ink:#1f302d}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#e3eee7 0,#f5efe3 58%,#eee5d5 100%);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;justify-content:center;align-items:center;padding:24px}
 .wrap{width:min(100%,760px);text-align:center}.logo{width:94px;height:94px;object-fit:contain;margin:0 auto 18px}.eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--green2)}h1{font-size:clamp(2rem,6vw,3.3rem);line-height:1.05;color:var(--green);margin:10px 0 12px;letter-spacing:-.05em}.intro{font-size:1rem;line-height:1.6;color:#53635e;margin:0 auto 30px;max-width:490px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.ministry{display:flex;min-height:126px;flex-direction:column;align-items:flex-start;justify-content:space-between;text-decoration:none;text-align:left;background:rgba(255,255,255,.78);border:1px solid #d9e1d9;border-radius:20px;padding:22px;color:var(--green);box-shadow:0 8px 24px #173e3010;transition:transform .18s,box-shadow .18s}.ministry:hover{transform:translateY(-3px);box-shadow:0 14px 28px #173e3020}.emoji{font-size:1.8rem;margin-bottom:14px}.name{font-size:1.08rem;font-weight:800}.go{font-size:.84rem;color:var(--green2);margin-top:7px}.install-app-wrap{margin:0 auto 22px;display:flex;flex-direction:column;align-items:center;gap:8px}.install-app-btn{border:0;border-radius:999px;padding:12px 20px;background:var(--green);color:#fff;font:700 .95rem Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 16px #173e3020}.install-app-btn:disabled{opacity:.8;cursor:default}.install-app-help{max-width:460px;margin:0;color:#53635e;font-size:.86rem;line-height:1.5}.foot{margin-top:28px;font-size:.78rem;color:#75827c}@media(max-width:430px){body{padding:18px}.grid{gap:10px}.ministry{padding:17px;min-height:116px;border-radius:16px}.name{font-size:1rem}.intro{font-size:.94rem}}
+
+.day-scale-wrap{margin:0 auto 18px}
+.day-scale-btn{border:0;border-radius:999px;padding:13px 22px;background:#fffdf9;color:var(--green);border:1px solid #cbd8ce;font:800 .98rem Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 18px #173e3012}
+.day-scale-btn:hover{background:#e9f1e9}
+.day-scale-modal{position:fixed;inset:0;z-index:100000;background:#102c28a8;display:none;align-items:center;justify-content:center;padding:16px}
+.day-scale-modal.open{display:flex}
+.day-scale-panel{width:min(100%,480px);max-height:min(82vh,720px);overflow:auto;background:#fffdf9;border-radius:20px;padding:20px;text-align:left;box-shadow:0 24px 70px #0003}
+.day-scale-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.day-scale-head h2{font-size:1.2rem;color:var(--green);margin:0}
+.day-scale-close{border:0;background:#edf2ec;border-radius:50%;width:36px;height:36px;font-size:1.2rem;cursor:pointer;color:var(--green)}
+.day-scale-controls{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.day-scale-controls input{flex:1;min-width:0;border:1px solid #cbd8ce;border-radius:10px;padding:11px;font:inherit;color:var(--ink);background:#fff}
+.day-scale-load{border:0;border-radius:10px;padding:11px 13px;background:var(--green);color:#fff;font:700 .88rem Inter,system-ui,sans-serif;cursor:pointer}
+.day-scale-status{font-size:.86rem;color:#65756e;margin:8px 0}
+.day-scale-results{display:grid;gap:9px}
+.day-scale-ministry{border:1px solid #dbe4dc;border-radius:12px;padding:12px;background:#fff}
+.day-scale-ministry h3{margin:0 0 7px;font-size:.98rem;color:var(--green)}
+.day-scale-ministry p{margin:4px 0;font-size:.88rem;line-height:1.45;color:#40534c;overflow-wrap:anywhere}
+.day-scale-empty{color:#78857e!important;font-style:italic}
+@media(max-width:430px){.day-scale-panel{padding:15px;border-radius:16px}.day-scale-controls{align-items:stretch;flex-direction:column}.day-scale-load{width:100%}}
+
 </style>
 </head>
 <body>
@@ -29,6 +50,7 @@
 <button type="button" id="installAppBtn" class="install-app-btn">⬇️ Baixe aqui o app</button>
 <p id="installAppHelp" class="install-app-help" hidden></p>
 </div>
+<div class="day-scale-wrap"><button class="day-scale-btn" id="dayScaleOpen" type="button">📅 Escala do dia</button></div>
 <nav class="grid" aria-label="Escolha um ministério">
 <a class="ministry" href="./louvor.html"><span><span class="emoji">🎶</span><br><span class="name">Louvor</span></span><span class="go">Acessar ministério →</span></a>
 <a class="ministry" href="./sonoplastia.html"><span><span class="emoji">🎚️</span><br><span class="name">Sonoplastia</span></span><span class="go">Acessar ministério →</span></a>
@@ -37,6 +59,89 @@
 <a class="ministry" href="./recepcao.html"><span><span class="emoji">👋</span><br><span class="name">Recepção</span></span><span class="go">Acessar ministério →</span></a>
 </nav>
 <footer class="foot">CBO · Comunidade Batista Oceânica</footer>
+
+<section class="day-scale-modal" id="dayScaleModal" role="dialog" aria-modal="true" aria-labelledby="dayScaleTitle">
+ <div class="day-scale-panel">
+  <div class="day-scale-head"><h2 id="dayScaleTitle">📅 Escala do dia</h2><button type="button" class="day-scale-close" id="dayScaleClose" aria-label="Fechar">×</button></div>
+  <div class="day-scale-controls"><input type="date" id="dayScaleDate" aria-label="Escolha o dia"><button type="button" class="day-scale-load" id="dayScaleLoad">Consultar</button></div>
+  <p class="day-scale-status" id="dayScaleStatus" role="status">Escolha uma data para consultar as escalas.</p>
+  <div class="day-scale-results" id="dayScaleResults"></div>
+ </div>
+</section>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="./firebase-config.js"></script>
+<script>
+(()=>{
+ const modal=document.getElementById('dayScaleModal'), open=document.getElementById('dayScaleOpen'), close=document.getElementById('dayScaleClose');
+ const dateInput=document.getElementById('dayScaleDate'), load=document.getElementById('dayScaleLoad'), status=document.getElementById('dayScaleStatus'), results=document.getElementById('dayScaleResults');
+ const today=new Date(); dateInput.value=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+ let db=null;
+ try{if(window.firebaseConfig?.apiKey&&window.firebase){if(!firebase.apps.length)firebase.initializeApp(window.firebaseConfig);db=firebase.firestore();}}catch(e){console.error(e);}
+ const ministries=[
+  {id:'louvor',name:'Louvor',kind:'louvor'},
+  {id:'sonoplastia',name:'Sonoplastia',kind:'calendar'},
+  {id:'midia',name:'Mídia',kind:'calendar'},
+  {id:'comunicacao',name:'Comunicação',kind:'calendar'},
+  {id:'recepcao',name:'Recepção',kind:'calendar'}
+ ];
+ const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const row=(name,detail)=>'<p><strong>'+esc(name)+':</strong> '+esc(detail||'—')+'</p>';
+ function card(name,content){return '<article class="day-scale-ministry"><h3>'+esc(name)+'</h3>'+content+'</article>';}
+ function people(v){return v?String(v):'Não escalado';}
+ function renderCalendarMinistry(m,d){
+  const sunday=d.getDay()===0, saturday=d.getDay()===6, tuesday=d.getDay()===2;
+  if(m.id==='sonoplastia'&&!sunday&&!saturday&&!tuesday)return card(m.name,'<p class="day-scale-empty">Não há escala neste dia.</p>');
+  if(['midia','comunicacao','recepcao'].includes(m.id)&&!sunday&&!saturday)return card(m.name,'<p class="day-scale-empty">Não há escala neste dia.</p>');
+  const docId=m.id+'-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  return db.collection('escalas').doc(docId).get().then(snap=>{
+   const dayData=snap.exists?(snap.data().dias||{})[String(d.getDate())]||{}:{};
+   let content='';
+   if(sunday&&['sonoplastia','midia','comunicacao','recepcao'].includes(m.id)){
+    const old=dayData.responsavel||'';
+    content+=row('Manhã',people(dayData.responsavelManha??old));
+    content+=row('Noite',people(dayData.responsavelNoite??old));
+    if(m.id==='recepcao')content+=row('2ª pessoa (escala geral)',people(dayData.responsavel2));
+   }else{
+    content+=row('Responsável',people(dayData.responsavel));
+    if(m.id==='recepcao')content+=row('2ª pessoa',people(dayData.responsavel2));
+   }
+   return card(m.name,content);
+  }).catch(e=>{console.error(e);return card(m.name,'<p class="day-scale-empty">Não foi possível consultar a escala.</p>');});
+ }
+ function renderLouvor(d){
+  if(d.getDay()!==0)return Promise.resolve(card('Louvor','<p class="day-scale-empty">A escala de Louvor é organizada aos domingos.</p>'));
+  const id=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  const instruments=[['bateria','Bateria'],['baixo','Baixo'],['violao','Violão'],['guitarra','Guitarra'],['teclado','Teclado'],['voz1','Voz 1'],['voz2','Voz 2'],['voz3','Voz 3'],['voz4','Voz 4'],['ministracao','Ministração']];
+  return db.collection('escalas').doc(id).get().then(snap=>{
+   const dayData=snap.exists?(snap.data().dias||{})[String(d.getDate())]||{}:{};
+   let content='';
+   instruments.forEach(([key,label])=>{if(dayData[key])content+=row(label,dayData[key]);});
+   if(!content)content='<p class="day-scale-empty">Nenhuma pessoa escalada ainda.</p>';
+   return card('Louvor',content);
+  }).catch(e=>{console.error(e);return card('Louvor','<p class="day-scale-empty">Não foi possível consultar a escala.</p>');});
+ }
+ async function consult(){
+  const raw=dateInput.value;if(!raw){status.textContent='Selecione uma data.';return;}
+  if(!db){status.textContent='Não foi possível conectar ao banco de dados.';return;}
+  const d=new Date(raw+'T12:00:00');
+  status.textContent='Consultando escalas…';results.innerHTML='';load.disabled=true;
+  try{
+   const cards=await Promise.all(ministries.map(m=>m.kind==='louvor'?renderLouvor(d):renderCalendarMinistry(m,d)));
+   results.innerHTML=cards.join('');
+   status.textContent=d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  }catch(e){console.error(e);status.textContent='Erro ao consultar as escalas.';}
+  finally{load.disabled=false;}
+ }
+ open.addEventListener('click',()=>{modal.classList.add('open');consult();});
+ close.addEventListener('click',()=>modal.classList.remove('open'));
+ modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open');});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('open');});
+ load.addEventListener('click',consult);
+ dateInput.addEventListener('change',consult);
+})();
+</script>
+
 </main>
 <script>
 if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('PWA',e)));
