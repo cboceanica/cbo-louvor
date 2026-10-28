@@ -92,7 +92,7 @@ function render(){
    const row=document.createElement('article'); row.className='day day-row' + ((cfg.maxPeople || 1) > 1 ? ' two-person-row' : '');
    const dateText=document.createElement('div'); dateText.className='datebox';
    dateText.innerHTML='<span class="date">'+String(day).padStart(2,'0')+'</span><span class="weekday">'+weekdays[date.getDay()]+'</span>';
-   if (ministry === 'sonoplastia') {
+   if (['sonoplastia','midia','comunicacao','recepcao'].includes(ministry)) {
      const iso = year+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
      const eventLabel = document.createElement('span'); eventLabel.className='calendar-event-name';
      eventLabel.textContent = date.getDay() === 2 ? 'Culto de Oração' : (sonoplastiaEvents.get(iso) || '');
