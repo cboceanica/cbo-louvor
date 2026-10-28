@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ministerios-cbo-v10';
+const CACHE_NAME = 'ministerios-cbo-v11';
 const APP_SHELL = ['./','./index.html','./louvor.html','./sonoplastia.html','./midia.html','./comunicacao.html','./recepcao.html','./ministry-calendar-v4.js','./ministry-calendar-v3.js','./styles.css','./app.js','./firebase-config.js','./logo-igreja.png','./icon-192.png','./icon-512.png','./manifest.webmanifest'];
 
 self.addEventListener('install', event => {
