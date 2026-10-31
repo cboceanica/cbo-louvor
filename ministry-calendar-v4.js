@@ -3,7 +3,7 @@ const CONFIG = {
  sonoplastia: { title: 'Sonoplastia', weekdays: [0,2,6], names: ['Judson','Marcelo','Ítalo','Felipe','Vladmir'] },
  midia: { title: 'Mídia', weekdays: [0,6], names: ['Leo','Beth','Cíntia','Miguel','Dayana'] },
  comunicacao: { title: 'Comunicação', weekdays: [0,6], names: ['Ester','GG','Matheus','Greicy','Gabriel','Marcus Vinícius','Pietro','Vitão'] },
- recepcao: { title: 'Recepção', weekdays: [0,6], maxPeople: 2, names: ['Francine','Marcia','Arquimedes','Vladmir','Sonia','Eunice'] }
+ recepcao: { title: 'Recepção', weekdays: [0,6], maxPeople: 3, names: ['Francine','Marcia','Arquimedes','Vladmir','Sonia','Eunice'] }
 };
 const ministry = document.querySelector('main')?.dataset.ministry;
 const cfg = CONFIG[ministry];
@@ -112,6 +112,19 @@ function render(){
        const blankOption = document.createElement('option'); blankOption.value=''; blankOption.textContent= ministry === 'sonoplastia' ? '— Selecionar técnico —' : '— Selecionar membro —'; pick.append(blankOption);
        memberNames.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;pick.append(opt);});
        const current = data[key]?.[period.field] ?? legacyAssigned;
+       const extraPicks = [];
+       if (ministry === 'recepcao') {
+         for (let n=2; n<=3; n++) {
+           const extra = document.createElement('select'); extra.className='person person-extra'; extra.setAttribute('aria-label',period.label+' · '+n+'ª pessoa · '+day);
+           const empty = document.createElement('option'); empty.value=''; empty.textContent='— '+n+'ª pessoa —'; extra.append(empty);
+           memberNames.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;extra.append(opt);});
+           const field = period.field + n;
+           const fallback = n===2 && period.id==='morning' ? (data[key]?.responsavel2 || '') : '';
+           const selected = data[key]?.[field] ?? fallback;
+           if(selected && !memberNames.includes(selected)){const opt=document.createElement('option');opt.value=selected;opt.textContent=selected+' (fora da lista atual)';extra.append(opt);}
+           extra.value=selected; extraPicks.push({select:extra,field}); line.append(extra);
+         }
+       }
        if(current && !memberNames.includes(current)){const opt=document.createElement('option');opt.value=current;opt.textContent=current+' (fora da lista atual)';pick.append(opt);}
        pick.value=current;
        const savePeriod = document.createElement('button'); savePeriod.className='save'; savePeriod.type='button'; savePeriod.textContent='Salvar';
@@ -120,13 +133,15 @@ function render(){
          if(!db){savedPeriod.textContent='Sem conexão';return;}
          savePeriod.disabled=true;savePeriod.textContent='…';savedPeriod.textContent='';
          try{
-           await db.collection('escalas').doc(docId()).set({dias:{[key]:{[period.field]:pick.value}}},{merge:true});
-           savedPeriod.textContent=pick.value?'✓ Salvo':'✓ Limpo';savePeriod.textContent='OK';
+           const periodData = {[period.field]:pick.value}; extraPicks.forEach(item=>periodData[item.field]=item.select.value);
+           await db.collection('escalas').doc(docId()).set({dias:{[key]:periodData}},{merge:true});
+           savedPeriod.textContent=(pick.value || extraPicks.some(item=>item.select.value))?'✓ Salvo':'✓ Limpo';savePeriod.textContent='OK';
          }catch(e){console.error(e);savedPeriod.textContent='Erro ao salvar';savePeriod.textContent='Tentar';}
          finally{savePeriod.disabled=false;}
        });
        pick.addEventListener('change',()=>{savePeriod.textContent='Salvar';savedPeriod.textContent='Não salvo';});
-       line.append(periodLabel,pick,savePeriod,savedPeriod); periods.append(line);
+       extraPicks.forEach(item=>item.select.addEventListener('change',()=>{savePeriod.textContent='Salvar';savedPeriod.textContent='Não salvo';}));
+       line.prepend(periodLabel); line.append(pick,savePeriod,savedPeriod); periods.append(line);
      });
      row.append(dateText,periods); calendar.append(row);
      continue;
@@ -136,27 +151,36 @@ function render(){
    memberNames.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;select.append(opt);});
    if(assigned&&!memberNames.includes(assigned)){const opt=document.createElement('option');opt.value=assigned;opt.textContent=assigned+' (fora da lista atual)';select.append(opt);}
    select.value=assigned;
-   let select2=null;
+   let select2=null, select3=null;
    if ((cfg.maxPeople || 1) > 1) {
      select2=document.createElement('select'); select2.className='person person-second'; select2.id='person2-'+key; select2.setAttribute('aria-label','Segundo responsável de '+day+' '+months[month]);
      const blank2=document.createElement('option'); blank2.value=''; blank2.textContent='— 2ª pessoa —'; select2.append(blank2);
      memberNames.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;select2.append(opt);});
      if(assigned2&&!memberNames.includes(assigned2)){const opt=document.createElement('option');opt.value=assigned2;opt.textContent=assigned2+' (fora da lista atual)';select2.append(opt);}
      select2.value=assigned2;
+     if ((cfg.maxPeople || 1) > 2) {
+       select3=document.createElement('select'); select3.className='person person-third'; select3.id='person3-'+key; select3.setAttribute('aria-label','Terceiro responsável de '+day+' '+months[month]);
+       const blank3=document.createElement('option'); blank3.value=''; blank3.textContent='— 3ª pessoa —'; select3.append(blank3);
+       memberNames.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;select3.append(opt);});
+       const assigned3=data[key]?.responsavel3 || '';
+       if(assigned3&&!memberNames.includes(assigned3)){const opt=document.createElement('option');opt.value=assigned3;opt.textContent=assigned3+' (fora da lista atual)';select3.append(opt);}
+       select3.value=assigned3;
+     }
    }
    const save=document.createElement('button');save.className='save';save.type='button';save.textContent='Salvar';
    const saved=document.createElement('span');saved.className='saved';saved.setAttribute('aria-live','polite');saved.textContent=(assigned || assigned2)?'✓ Salvo':'';
    save.addEventListener('click',async()=>{
      if(!db){saved.textContent='Sem conexão';return;}
      save.disabled=true;save.textContent='…';saved.textContent='';
-     try{const dayData={responsavel:select.value}; if(select2) dayData.responsavel2=select2.value;
-     await db.collection('escalas').doc(docId()).set({dias:{[key]:dayData}},{merge:true});saved.textContent=(select.value || (select2&&select2.value))?'✓ Salvo':'✓ Limpo';save.textContent='OK';}
+     try{const dayData={responsavel:select.value}; if(select2) dayData.responsavel2=select2.value; if(select3) dayData.responsavel3=select3.value;
+     await db.collection('escalas').doc(docId()).set({dias:{[key]:dayData}},{merge:true});saved.textContent=(select.value || (select2&&select2.value) || (select3&&select3.value))?'✓ Salvo':'✓ Limpo';save.textContent='OK';}
      catch(e){console.error(e);saved.textContent='Erro ao salvar';save.textContent='Tentar';}
      finally{save.disabled=false;}
    });
    select.addEventListener('change',()=>{save.textContent='Salvar';saved.textContent='Não salvo';});
    if(select2) select2.addEventListener('change',()=>{save.textContent='Salvar';saved.textContent='Não salvo';});
-   row.append(dateText,select); if(select2) row.append(select2); row.append(save,saved);calendar.append(row);
+   if(select3) select3.addEventListener('change',()=>{save.textContent='Salvar';saved.textContent='Não salvo';});
+   row.append(dateText,select); if(select2) row.append(select2); if(select3) row.append(select3); row.append(save,saved);calendar.append(row);
  }
  if(!total){const empty=document.createElement('div');empty.className='empty';empty.textContent='Não há dias de escala deste ministério neste mês.';calendar.append(empty);}
 }
