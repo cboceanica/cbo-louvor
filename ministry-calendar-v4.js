@@ -2,7 +2,7 @@
 const CONFIG = {
  sonoplastia: { title: 'Sonoplastia', weekdays: [0,2,6], names: ['Judson','Marcelo','Ítalo','Felipe','Vladmir'] },
  midia: { title: 'Mídia', weekdays: [0,6], names: ['Leo','Beth','Cíntia','Miguel','Dayana'] },
- comunicacao: { title: 'Comunicação', weekdays: [0,6], names: ['Ester','GG','Matheus','Greicy','Gabriel','Marcus Vinícius','Pietro','Vitão'] },
+ comunicacao: { title: 'Comunicação', weekdays: [0,6], names: ['Ester','GG','Mateus','Greicy','Gabriel','Marcus Vinícius','Pietro','Vitão'] },
  recepcao: { title: 'Recepção', weekdays: [0,6], maxPeople: 3, names: ['Francine','Marcia','Arquimedes','Vladmir','Sonia','Eunice'] }
 };
 const ministry = document.querySelector('main')?.dataset.ministry;
